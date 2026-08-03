@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument("--use-feedback", action="store_true", help="Use feedback sub-agent")
     # Model related
     parser.add_argument("--model-url", type=str, default="http://0.0.0.0:30000", help="Model URL")
+    parser.add_argument("--model-name", type=str, default="default", help="Model name to use at the server")
     parser.add_argument("--model-api-key", type=str, default=None, help="Model API key")
     parser.add_argument("--model-params", type=json.loads, default={}, help="Model parameters as JSON string, e.g. '{\"temperature\": 0.1}'")
 
@@ -73,15 +74,15 @@ def main():
         prompt_config_file=args.prompt_config_file,
         # map elites related
         map_elites_method=args.map_elites_method, #cluster, fixed, dynamic ideas
-        num_elites=args.num_elites
+        num_elites=args.num_elites,
         # Sub-agents
         use_debug=args.use_debug, 
         use_strategy=args.use_strategy, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
         use_feedback=args.use_feedback,
         # model related:
-        model=args.model,
+        model_name=args.model_name,
         model_url=args.model_url,
-        model_api_key=args.model_api_key
+        model_api_key=args.model_api_key,
         model_params=args.model_params #dictionary e.g. {'temperature':0.1}
     )
 
