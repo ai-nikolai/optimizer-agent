@@ -1,0 +1,26 @@
+[project]
+name = "optimizer-agent"
+version = "0.0.0.1"
+description = "Optimizer Agent"
+readme = "README.md"
+requires-python = ">=3.10"
+# dependencies = [
+# ]
+authors = [
+    {name = "Nikolai Rozanov", email = "nikolai.rozanov@gmail.com"},
+]
+license = {file = "LICENSE"}
+urls = {"Homepage" = "https://github.com/ai-nikolai/optimizer-agent"}
+
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["optimizer_agent"]
+
+# For the future...
+[project.scripts]
+optimizer-agent = "optimizer_agent.cli:main"
+

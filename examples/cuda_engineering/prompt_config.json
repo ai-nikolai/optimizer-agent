@@ -1,0 +1,33 @@
+{
+    "core":{
+        "system" : "You are an expert CUDA Kernel Engineer.",
+        "user" : "## Task: Your task is to improve the speed of the CUDA implementation\n##Current Implementation: {current_implementation}",
+        "strategy" : "##Strategy: Follow the following strategy {strategy}",
+        "feedback" : "##Feedback: Here is additional feedback {feedback}"
+    },
+    "debug":{
+        "system" : "You are an expert CUDA Kernel Engineer.",
+        "user" : "## Task: Your task is to improve the speed of the CUDA implementation\n##Current Implementation: {current_implementation}",
+        "strategy" : "##Strategy: {strategy}",
+        "feedback" : "##Feedback: {feedback}"
+    },
+    "strategy_core" :{
+        "system" : "You are an expert CUDA Kernel Engineer and Planer.",
+        "user" : "## Task: Your task is to create a implementation plan for improving. ##Current Implementation: {current_implementation}\n##Results: The previous speed was: {result}, while the reference implementation is: {result_reference}"
+    },
+    "strategy_debug" :{
+        "system" : "You are an expert CUDA Kernel Engineer and Planner.",
+        "user" : "## Task: Your task is to create a implementation plan for debugging. ##Current Implementation: {current_implementation}\n##Error: {error}",
+        "reference" : "##Reference: Here is the reference implementation {reference}"
+    },
+    "feedback_core":{
+        "system":"You are an expert CUDA kernel engineer and code reviewer. You review code and provide ideas on how to improve.",
+        "user" : "## Task: Your task is to improve the speed of the CUDA implementation\n##Current Implementation: {current_implementation}"
+    },
+    "feedback_debug":{
+        "system":"You are an expert CUDA kernel engineer and code reviewer. You review code and provide ideas on how to debug the code.",
+        "user" : "## Task: Your task is to improve the speed of the CUDA implementation\n##Current Implementation: {current_implementation}\n##Error: {error}",
+        "reference" : "##Reference: Here is the reference implementation {reference}"
+
+    }
+}
