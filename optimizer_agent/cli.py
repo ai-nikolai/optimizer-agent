@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument("--prompt-config-file", type=str, help="Path to prompt configuration file, otherwise default is used.")
 
     # Map elites related
-    parser.add_argument("--predecessor-selection-method", type=str, default="cluster", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"])
+    parser.add_argument("--predecessor-selection-method", type=str, default="bestN_last", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"])
     parser.add_argument("--map-elites-method", type=str, default=None, help="Map elites method: cluster, fixed, dynamic ideas", choices=["cluster", "fixed", "dynamic"])
     parser.add_argument("--num-map-elites", type=int, default=None, help="Number of map elites")
 
@@ -41,7 +41,8 @@ def parse_args():
     parser.add_argument("--use-debug", action="store_true", help="Use debug sub-agent")
     parser.add_argument("--use-strategy", action="store_true", help="Use strategy sub-agent")
     parser.add_argument("--use-feedback", action="store_true", help="Use feedback sub-agent")
-    
+    parser.add_argument("--diff-based", action="store_true", help="Use diffs only... (need to think how to implement)")
+
     # Model related
     parser.add_argument("--model-url", type=str, default="http://0.0.0.0:30000", help="Model URL")
     parser.add_argument("--model-name", type=str, default="default", help="Model name to use at the server")
@@ -80,6 +81,7 @@ def main():
         use_debug=args.use_debug, 
         use_strategy=args.use_strategy, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
         use_feedback=args.use_feedback,
+        diff_based=args.diff_based,
         # model related:
         model_name=args.model_name,
         model_url=args.model_url,
