@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument("--evaluate", type=str, required=True, help="Evaluate function")
     parser.add_argument("--reference", type=str, default="", help="Reference function (optional), gets passed to the evaluate function if set.")
 
-    parser.add_argument("--experiments-dir", type=str, help="The experiments dir for the session.")
+    parser.add_argument("--experiments-dir", type=str, default="opt_agent_experiment" help="The experiments dir for the session.")
 
     args = parser.parse_args()
     return args
@@ -64,17 +64,19 @@ def main():
     args = parse_args()
     agent = Agent(
         # general strategy: sequential, parallel, tree, graph...
-        overall_strategy=args.overall_strategy,
+        # overall_strategy=args.overall_strategy, #is this needed? or is this implicit in N(iterations), I(islands), B(beams), selection_algorithm
         # general args
-        num_iterations=args.num_iterations, 
-        num_debug_iterations=args.num_debug_iterations,
-        num_islands=args.num_islands,
-        num_beams=args.num_beams,
+        num_iterations=args.num_iterations, #total "generations"
+        num_debug_iterations=args.num_debug_iterations, #num debug steps between generations
+        num_islands=args.num_islands, #completely independent runs (maybe with cross-over later)
+        num_beams=args.num_beams, #num generations from one predecessor/predecessor group
         # prompts related:
         prompt_config_file=args.prompt_config_file,
-        # map elites related
-        map_elites_method=args.map_elites_method, #cluster, fixed, dynamic ideas
-        num_elites=args.num_elites,
+        # predecessor selection related (e.g. elites)
+        # num_elites=args.num_elites, #is this needed?
+        predecessor_selection_method=args.predecessor_selection_method, #bestN_last (from last generations/iterations)=sequential,parallel, bestN_all (from all generations/iterations)=graph, map_elites, (this operates within a single island)
+        num_map_elites=args.num_map_elites, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
+        map_elites_method=args.map_elites_method, #cluster, fixed, dynamic
         # Sub-agents
         use_debug=args.use_debug, 
         use_strategy=args.use_strategy, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
@@ -91,6 +93,7 @@ def main():
         baseline=args.baseline, 
         evaluate=args.evaluate,
         reference=args.reference, #this is optional
+        experiments_dir=args.experiments_dir
     )
 
 
