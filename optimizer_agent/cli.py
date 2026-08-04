@@ -20,12 +20,8 @@ MAGENTA = '\033[95m'
 CYAN = '\033[96m'
 RESET = '\033[0m'
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Optimizer Agent CLI")
-
-    # Overall strategy
-    parser.add_argument("--overall-strategy", type=str, default="sequential", help="Overall strategy: sequential, parallel, tree, graph...")
 
     # General args
     parser.add_argument("--num-iterations", type=int, default=1, help="Number of iterations")
@@ -34,15 +30,18 @@ def parse_args():
     parser.add_argument("--num-beams", type=int, default=1, help="Number of beams")
 
     # Prompts related
-    parser.add_argument("--prompt-config-file", type=str, help="Path to prompt configuration file")
+    parser.add_argument("--prompt-config-file", type=str, help="Path to prompt configuration file, otherwise default is used.")
 
     # Map elites related
-    parser.add_argument("--map-elites-method", type=str, default="cluster", help="Map elites method: cluster, fixed, dynamic ideas", choices=["cluster", "fixed", "dynamic"])
-    parser.add_argument("--num-elites", type=int, default=3, help="Number of elites")
-        # Sub-agents
+    parser.add_argument("--predecessor-selection-method", type=str, default="cluster", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"])
+    parser.add_argument("--map-elites-method", type=str, default=None, help="Map elites method: cluster, fixed, dynamic ideas", choices=["cluster", "fixed", "dynamic"])
+    parser.add_argument("--num-map-elites", type=int, default=None, help="Number of map elites")
+
+    # Sub-agents
     parser.add_argument("--use-debug", action="store_true", help="Use debug sub-agent")
     parser.add_argument("--use-strategy", action="store_true", help="Use strategy sub-agent")
     parser.add_argument("--use-feedback", action="store_true", help="Use feedback sub-agent")
+    
     # Model related
     parser.add_argument("--model-url", type=str, default="http://0.0.0.0:30000", help="Model URL")
     parser.add_argument("--model-name", type=str, default="default", help="Model name to use at the server")
@@ -54,7 +53,7 @@ def parse_args():
     parser.add_argument("--evaluate", type=str, required=True, help="Evaluate function")
     parser.add_argument("--reference", type=str, default="", help="Reference function (optional), gets passed to the evaluate function if set.")
 
-    parser.add_argument("--experiments-dir", type=str, default="opt_agent_experiment" help="The experiments dir for the session.")
+    parser.add_argument("--experiments-dir", type=str, default="opt_agent_experiment", help="The experiments dir for the session.")
 
     args = parser.parse_args()
     return args
@@ -88,7 +87,6 @@ def main():
         model_params=args.model_params #dictionary e.g. {'temperature':0.1}
     )
 
-
     agent.run(
         baseline=args.baseline, 
         evaluate=args.evaluate,
@@ -100,3 +98,6 @@ def main():
 
 if __name__=="__main__":
     main()
+
+
+# optimizer-agent --baseline "a.py" --evaluate "b.py"

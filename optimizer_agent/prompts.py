@@ -116,7 +116,8 @@ def create_prompt(prompt_type="core", key_info={}, prompt_config=DEFAULT_PROMPT_
     # Process system prompts
     system_cfg = cfg.get("system", {})
     system_messages = []
-    for key in system_cfg.get("order", []):
+    system_order = system_cfg.get("order", [])
+    for key in system_order:
         prompt = system_cfg.get("prompts", {}).get(key)
         if prompt:
             # Format the prompt with key_info if available
@@ -133,7 +134,8 @@ def create_prompt(prompt_type="core", key_info={}, prompt_config=DEFAULT_PROMPT_
     # Process user prompts
     user_cfg = cfg.get("user", {})
     user_messages = []
-    for key in user_cfg.get("order", []):
+    user_order = user_cfg.get("order", [])
+    for key in user_order:
         prompt = user_cfg.get("prompts", {}).get(key)
         if prompt:
             # Format the prompt with key_info if available

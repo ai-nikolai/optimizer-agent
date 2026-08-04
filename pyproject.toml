@@ -3,9 +3,10 @@ name = "optimizer-agent"
 version = "0.0.0.1"
 description = "Optimizer Agent"
 readme = "README.md"
-requires-python = ">=3.10"
-# dependencies = [
-# ]
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.32.5"
+]
 authors = [
     {name = "Nikolai Rozanov", email = "nikolai.rozanov@gmail.com"},
 ]

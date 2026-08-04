@@ -2,3 +2,8 @@ pypi_build.sh
 pypi_upload.sh
 
 LOCAL.md
+
+env_*
+*.egg-info
+__pycache__
+opt_agent_experiment*
