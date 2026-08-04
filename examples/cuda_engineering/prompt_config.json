@@ -1,103 +1,106 @@
 {
-    "core": {
-        "system": {
-            "prompts": {
-                "system": "You are an expert AI scientist."
+    "improve" :{ 
+        "core":{
+            "system": {
+                "prompts" : {
+                    "system": "You are an expert AI scientist."
+                },
+                "order" : ["system"]
             },
-            "order": ["system"]
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is to optimize/improve the given task",
+                    "implementation" : "## Current Implementation: {current_implementation}",
+                    "strategy" : "## Strategy: Follow the following strategy {strategy}",
+                    "feedback" : "## Feedback: Here is additional feedback {feedback}"
+                },
+                "order" : ["task","implementation","strategy","feedback"]
+            }
         },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is to optimize/improve the given task",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "strategy": "## Strategy: Follow the following strategy {strategy}",
-                "feedback": "## Feedback: Here is additional feedback {feedback}"
+        "strategy":{
+            "system": {
+                "prompts" :{
+                    "system" : "You are an expert AI scientist and focus on generating the idea and plan"
+                },
+                "order" : ["system"]
             },
-            "order": ["task", "implementation", "strategy", "feedback"]
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is to create a implementation plan for improving.",
+                    "implementation": "## Current Implementation: {current_implementation}",
+                    "result": "## Results: The previous result was: {result}",
+                    "reference_result": "##Reference result: {reference_result}"
+                },
+                "order" : ["task","implementation","result","reference_result"]
+            }
+        },
+        "feedback":{
+            "system": {
+                "prompts" :{
+                    "system":"You are an expert AI scientist and focus on reviewing previous solutions and generating feedback"
+                },
+                "order" : ["system"]
+            },
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is provide feedback on the implementation",
+                    "implementation": "## Current Implementation: {current_implementation}",
+                    "result": "## Results: The previous result was: {result}"
+                },
+                "order" : ["task","implementation","result"]
+            }
         }
     },
-    "debug": {
-        "system": {
-            "prompts": {
-                "system": "You are an expert AI scientist and focus on debugging."
+    "debug":{
+        "core":{
+            "system": {
+                "prompts" :{
+                    "system" : "You are an expert AI scientist and focus on debugging."
+                },
+                "order" : ["system"]
             },
-            "order": ["system"]
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is to debug the current solution",
+                    "implementation":"## Current Implementation: {current_implementation}",
+                    "strategy" : "## Strategy: {strategy}",
+                    "feedback" : "## Feedback: {feedback}"
+                },
+                "order" : ["task","implementation","strategy","feedback"]
+            }
         },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is to debug the current solution",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "strategy": "## Strategy: {strategy}",
-                "feedback": "## Feedback: {feedback}"
+        "strategy":{
+            "system": {
+                "prompts" :{
+                    "system" : "You are an expert AI scientist and focus on debugging and specifically on generating the idea and plan"
+                },
+                "order" : ["system"]
             },
-            "order": ["task", "implementation", "strategy", "feedback"]
-        }
-    },
-    "strategy_core": {
-        "system": {
-            "prompts": {
-                "system": "You are an expert AI scientist and focus on generating the idea and plan"
-            },
-            "order": ["system"]
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is to create a implementation plan for improving.",
+                    "implementation": "## Current Implementation: {current_implementation}",
+                    "error": "## Error: {error}"
+                },
+                "order" : ["task","implementation","error"]
+            }
         },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is to create a implementation plan for improving.",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "result": "## Results: The previous result was: {result}",
-                "reference_result": "##Reference result: {reference_result}"
+        "feedback":{
+            "system": {
+                "prompts" :{
+                    "system":"You are an exper AI scientist and focus debugging and specifically on reviewing previous solutions and generating feedback"
+                },
+                "order" : ["system"]
             },
-            "order": ["task", "implementation", "result", "reference_result"]
-        }
-    },
-    "strategy_debug": {
-        "system": {
-            "prompts": {
-                "system": "You are an expert AI scientist and focus on debugging and specifically on generating the idea and plan"
-            },
-            "order": ["system"]
-        },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is to create a implementation plan for improving.",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "error": "## Error: {error}"
-            },
-            "order": ["task", "implementation", "error"]
-        }
-    },
-    "feedback_core": {
-        "system": {
-            "prompts": {
-                "system": "You are an expert AI scientist and focus on reviewing previous solutions and generating feedback"
-            },
-            "order": ["system"]
-        },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is provide feedback on the implementation",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "result": "## Results: The previous result was: {result}"
-            },
-            "order": ["task", "implementation", "result"]
-        }
-    },
-    "feedback_debug": {
-        "system": {
-            "prompts": {
-                "system": "You are an exper AI scientist and focus debugging and specifically on reviewing previous solutions and generating feedback"
-            },
-            "order": ["system"]
-        },
-        "user": {
-            "prompts": {
-                "task": "## Task: Your task is to improve the speed of the CUDA implementation",
-                "implementation": "## Current Implementation: {current_implementation}",
-                "error": "## Error: {error}",
-                "reference": "## Reference: Here is the reference implementation {reference}"
-            },
-            "order": ["task", "implementation", "error", "reference"]
+            "user": {
+                "prompts" : {
+                    "task" : "## Task: Your task is to improve the speed of the CUDA implementation",
+                    "implementation": "## Current Implementation: {current_implementation}",
+                    "error": "## Error: {error}",
+                    "reference" : "## Reference: Here is the reference implementation {reference}"
+                },
+                "order" : ["task","implementation","error","reference"]
+            }
         }
     }
 }
-

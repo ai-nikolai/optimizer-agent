@@ -5,9 +5,15 @@ import time
 import uuid
 from pathlib import Path
 
-from . import utils
-from . import prompts
-from .candidates import *
+
+from optimizer_agent.candidates import (
+    SingleCandidate,
+    CandidatesBestNAll,
+    CandidatesBestNLast,
+    MapElitesCandidates
+)
+from optimizer_agent.agent_strategies import CoreAgent
+from optimizer_agent.utils import LLMServer, FakeLLMServer
 
 
 class Agent():
@@ -26,10 +32,12 @@ class Agent():
         num_map_elites=None, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
         map_elites_method=None, #cluster, fixed, dynamic
         # Sub-agents
-        use_debug=False, 
         use_strategy=False, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
         use_feedback=False,
         diff_based=False,
+        use_debug=False, 
+        use_debug_strategy=False,
+        use_debug_feedback=False,
         # model related:
         model_name="default",
         model_url="http://0.0.0.0:30000",
@@ -69,6 +77,9 @@ class Agent():
         self.model_api_key=model_api_key
         self.model_params=model_params
 
+        self.server = FakeLLMServer(model_url, model_api_key)
+        # self.server = LLMServer()
+
         # RUNTIME
         self.experiments_dir = None
         self.baseline_path = None
@@ -77,6 +88,8 @@ class Agent():
 
         # Candidates
         self.candidates = {}
+
+
     
     def run(self,
         baseline, 
@@ -86,11 +99,8 @@ class Agent():
     ):
         """The main entry point"""
         self.experiments_dir = Path(experiments_dir).mkdir(parents=True, exist_ok=True)
-        
         self.baseline_path = baseline
-        
         self.evaluate_path = evaluate
-        
         self.reference_path = reference
 
         for idx in range(self.num_iterations):
@@ -120,7 +130,7 @@ class Agent():
         if iteration_idx == 0:
             self.candidates[island_idx] = self.predecessor_candidates_class(num_map_elites=self.num_map_elites)
             prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
-            self.run_single_generation(iteration_idx,island_idx,prompt_data)
+            candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data)
         else:
             current_candidates_object = self.candidates[island_idx]
 
@@ -129,7 +139,7 @@ class Agent():
 
             for key,candidate in best_candidates.items():
                 prompt_data.update({"current_implementation":self._read_file(self.candidate.path)})
-                self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
+                candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
 
     def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
         print(f'---- Running generation {iteration_idx},{island_idx} ----')

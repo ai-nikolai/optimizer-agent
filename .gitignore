@@ -7,3 +7,5 @@ env_*
 *.egg-info
 __pycache__
 opt_agent_experiment*
+
+optimizer_agent_ai.py

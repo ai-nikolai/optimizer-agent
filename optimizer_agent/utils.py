@@ -3,63 +3,83 @@ import json
 import argparse
 
 
-def call_openai_server(messages, max_tokens=2048, temperature=0.0, top_p=0.95, model="default", server_url=None, api_key=None, tools=None,):
-    """
-    Querying an OpenAI-compatible server (local or remote) using the requests library.
-    Supports authentication via API key if provided.
-    """
-    url = f"{server_url}/v1/chat/completions"
+class LLMServer():
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    def __init__(self, server_url=None, api_key=None,):
+        self.server_url = server_url
+        self.api_key = api_key
+    
+    
+    def call_server(self, messages, max_tokens=2048, temperature=0.0, top_p=0.95, model="default", tools=None,):
+        """
+        Querying an OpenAI-compatible server (local or remote) using the requests library.
+        Supports authentication via API key if provided.
+        """
+        url = f"{self.server_url}/v1/chat/completions"
 
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        # "max_tokens": max_tokens,
-        # "top_p": top_p
-    }
+        headers = {
+            "Content-Type": "application/json"
+        }
+        if api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
-    if tools:
-        payload["tools"] = tools
-        payload["tool_choice"] = "auto"
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            # "max_tokens": max_tokens,
+            # "top_p": top_p
+        }
 
-    try:
-        response = requests.post(
-            url,
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-        response.raise_for_status()
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
 
-        result = response.json().get("choices", [{}])[0].get("message", {})
-        content = result.get("content", "")
-        tool_calls = result.get("tool_calls", [])
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            response.raise_for_status()
 
-        return content, tool_calls
+            # TODO change this for multiple responses.
+            result = response.json().get("choices", [{}])[0].get("message", {})
+            content = result.get("content", "")
+            tool_calls = result.get("tool_calls", [])
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling OpenAI Server...: {e}")
-        return None, None
-    except (json.JSONDecodeError, KeyError, IndexError) as e:
-        print(f"Error processing response: {e}")
-        return None, None
+            return [content], tool_calls
 
-# Alternative: use the newer SGLang API format (v0.3+)
-def call_openai_server_prompt(prompt, max_tokens=1024, temperature=0.0, top_p=0.95, model="default", server_url=None, api_key=None, tools=None):
-    """
-    OpenAI compatible call, pre-creating the messages object.
-    """
-    messages = [
-            {"role": "user", "content": prompt}
-        ]
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling OpenAI Server...: {e}")
+            return None, None
+        except (json.JSONDecodeError, KeyError, IndexError) as e:
+            print(f"Error processing response: {e}")
+            return None, None
 
-    return call_openai_server(messages, max_tokens, temperature, top_p, model, server_url=server_url, api_key=api_key, tools=tools)
+    def call_server_prompt(self, prompt, max_tokens=1024, temperature=0.0, top_p=0.95, model="default", tools=None):
+        """
+        OpenAI compatible call, pre-creating the messages object.
+        """
+        messages = [
+                {"role": "user", "content": prompt}
+            ]
+
+        return self.call_server(messages, max_tokens, temperature, top_p, model, tools=tools)
+
+
+
+class FakeLLMServer():
+    def __init__(self,**kwargs):
+        print("Fake Server Running...")
+    
+    def call_server(self, *argv,**kwargs):
+        return ["fake server response"]
+    
+    def call_server_prompt(self, *argv,**kwargs):
+        return ["fake prompt response"]
+    
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Agent loop for interacting with a language model")
@@ -83,8 +103,10 @@ if __name__ == '__main__':
 
     print(f"Prompt:\n{prompt}")
     print("---")
+
+    server = LLMServer(server_url, args.api_key)
  
-    response_text, tool_calls = call_openai_server_prompt(prompt, server_url=server_url, api_key=args.api_key)
+    response_text, tool_calls = server.call_server_prompt(prompt)
     print(f"Response:\n{response_text}")
     print("---")
     print(f"Tools:\n{tool_calls}")

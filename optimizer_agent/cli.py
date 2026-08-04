@@ -8,7 +8,7 @@ import uuid
 import argparse
 import sys
 
-from .optimizer_agent import Agent
+from optimizer_agent.main import Agent
 
 # ANSI escape codes for colors and bold
 BOLD = '\033[1m'
@@ -38,9 +38,11 @@ def parse_args():
     parser.add_argument("--num-map-elites", type=int, default=None, help="Number of map elites")
 
     # Sub-agents
-    parser.add_argument("--use-debug", action="store_true", help="Use debug sub-agent")
     parser.add_argument("--use-strategy", action="store_true", help="Use strategy sub-agent")
     parser.add_argument("--use-feedback", action="store_true", help="Use feedback sub-agent")
+    parser.add_argument("--use-debug", action="store_true", help="Use debug sub-agent")
+    parser.add_argument("--use-debug-strategy", action="store_true", help="Use strategy sub-agent")
+    parser.add_argument("--use-debug-feedback", action="store_true", help="Use feedback sub-agent")
     parser.add_argument("--diff-based", action="store_true", help="Use diffs only... (need to think how to implement)")
 
     # Model related
@@ -78,9 +80,11 @@ def main():
         num_map_elites=args.num_map_elites, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
         map_elites_method=args.map_elites_method, #cluster, fixed, dynamic
         # Sub-agents
-        use_debug=args.use_debug, 
         use_strategy=args.use_strategy, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
         use_feedback=args.use_feedback,
+        use_debug=args.use_debug,
+        use_debug_strategy=args.use_debug_strategy,
+        use_debug_feedback=args.use_debug_feedback,
         diff_based=args.diff_based,
         # model related:
         model_name=args.model_name,
