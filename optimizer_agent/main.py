@@ -2,6 +2,10 @@ import os
 import json
 import time
 
+import tempfile
+
+import subprocess
+
 import uuid
 from pathlib import Path
 
@@ -13,7 +17,12 @@ from optimizer_agent.candidates import (
     MapElitesCandidates
 )
 from optimizer_agent.agent_strategies import CoreAgent
-from optimizer_agent.utils import LLMServer, FakeLLMServer
+
+from optimizer_agent.utils import (
+    extract_eval_results,
+    LLMServer,
+    FakeLLMServer
+)
 
 
 class Agent():
@@ -51,6 +60,9 @@ class Agent():
         self.num_beams=num_beams
         # prompts related:
         self.prompt_config_file=prompt_config_file
+
+        with open(self.prompt_config_file, 'r', encoding='utf-8') as f:
+            self.prompt_config = json.load(f)
         
         self.predecessor_selection_method=predecessor_selection_method
         if predecessor_selection_method=="bestN_all":
@@ -66,9 +78,13 @@ class Agent():
         self.map_elites_method=map_elites_method
 
         # Sub-agents
-        self.use_debug=use_debug
         self.use_strategy=use_strategy
         self.use_feedback=use_feedback
+
+        self.use_debug=use_debug
+        self.use_debug_strategy=use_debug_strategy,
+        self.use_debug_feedback=use_debug_feedback,
+
         self.diff_based=diff_based
 
         # model related:
@@ -89,7 +105,13 @@ class Agent():
         # Candidates
         self.candidates = {}
 
-
+        # Agent init:
+        self.core_agent = CoreAgent(self.server, prompt_config=self.prompt_config["improve"], use_strategy=use_strategy, use_feedback=use_feedback)
+        
+        if use_debug:
+            self.debug_agent = CoreAgent(self.server, prompt_config=self.prompt_config["debug"], use_strategy=use_debug_strategy, use_feedback=use_debug_feedback)
+        else:
+            self.debug_agent = None
     
     def run(self,
         baseline, 
@@ -126,11 +148,14 @@ class Agent():
 
 
     def run_single_island(self, iteration_idx, island_idx):
-        prompt_data = self.get_prompt_data()
         if iteration_idx == 0:
-            self.candidates[island_idx] = self.predecessor_candidates_class(num_map_elites=self.num_map_elites)
+            prompt_data = self.get_prompt_data()
+            current_candidates_object = self.predecessor_candidates_class(num_map_elites=self.num_map_elites)
+            self.candidates[island_idx] = current_candidates_object
             prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
+            
             candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data)
+            current_candidates_object.update_candidates(candidate)
         else:
             current_candidates_object = self.candidates[island_idx]
 
@@ -138,12 +163,53 @@ class Agent():
             num_candidates = len(best_candidates)
 
             for key,candidate in best_candidates.items():
-                prompt_data.update({"current_implementation":self._read_file(self.candidate.path)})
+                prompt_data = candidate.prompt_data
                 candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
+                current_candidates_object.update_candidates(candidate)
 
     def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
-        print(f'---- Running generation {iteration_idx},{island_idx} ----')
+        """ A single generation with debugging..."""
+        response, prompt_data = self.core_agent.generate_response(prompt_data)
         
+        temp_file = tempfile.NamedTemporaryFile(delete = False)
+        temp_file.write(response["core_response_clean"].encode('utf-8'))
+        temp_file.close()
+        scores, stdout, stderr, success = self.run_eval(temp_file.name)
+        os.remove(temp_file.name)
+
+        if not success and self.use_debug:
+            for idx in range(self.num_debug_iterations):
+                print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
+
+    def run_eval(self, new_path):
+        # call subprocess
+        eval_command = ["python", self.evaluate_path]
+
+        # Add reference if set
+        if self.reference_path:
+            eval_command += ["--reference", self.reference_path]
+
+        # Add solution new_path
+        eval_command += ["--solution", new_path]
+
+        # Run the subprocess
+        result = subprocess.run(eval_command, check=True, capture_output=True, text=True)
+        # Capture stdout and stderr
+        stdout = result.stdout
+        stderr = result.stderr
+        # Check if the evaluation was successful
+        if result.returncode == 0:
+            success = True
+        else:
+            success = False
+
+        return extract_eval_results(stdout), stdout, stderr, success
+
+        
+    
+    def log_single_generation(self, iteration_idx, island_idx, other=None, is_debug=False):
+        """All sorts of saving to files..."""
+        pass
 
 
     def __repr__(self):

@@ -15,6 +15,8 @@ from pathlib import Path
 import torch
 import numpy as np
 
+from pprint import pprint
+
 REFERENCE_FILE=os.environ.get("REFERENCE_FILE", "./reference_29.py")
 
 # ----------------------------------------------------------------------
@@ -315,24 +317,25 @@ def evaluate(new_path, original_path=REFERENCE_FILE, seed=42, num_correctness_tr
 # ----------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--original", required=True)
-    ap.add_argument("--new", required=True)
+    ap.add_argument("--reference", required=True)
+    ap.add_argument("--solution", required=True)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--trials", type=int, default=3, help="Number of correctness trials")
     ap.add_argument("--perf", type=int, default=10, help="Number of timing trials")
     args = ap.parse_args()
 
     result = evaluate(
-        original_path=args.original,
-        new_path=args.new,
+        original_path=args.reference,
+        new_path=args.solution,
         seed=args.seed,
         num_correctness_trials=args.trials,
         num_perf_trials=args.perf,
     )
 
     print("\n=== Evaluation Result ===")
-    for k, v in result.items():
-        print(f"{k:25s}: {v}")
+    # for k, v in result.items():
+    #     print(f"{k:25s}: {v}")
+    pprint(result)
 
 if __name__ == "__main__":
     main()

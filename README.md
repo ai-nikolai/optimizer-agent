@@ -15,6 +15,7 @@ pip3 install -e .
 
 2. Running example:
 ```bash
+# ./examples/test_example/run.sh
 ./examples/cuda_engineering/run.sh
 ```
 

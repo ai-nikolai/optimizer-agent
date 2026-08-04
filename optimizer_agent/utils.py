@@ -2,6 +2,38 @@ import requests
 import json
 import argparse
 
+def extract_eval_results(stdout):
+    # Extract the final JSON output after EVAL_MARKER
+    marker = "=== Evaluation Result ==="
+    if marker in stdout:
+        # Get everything after the marker
+        evaluation_output = stdout.split(marker)[-1].strip()
+
+        # Try to parse the JSON from the evaluation output
+        try:
+            # Find the first JSON object in the output
+            # This handles cases where there might be additional text
+            start_idx = evaluation_output.find('{')
+            end_idx = evaluation_output.rfind('}') + 1
+
+            if start_idx != -1 and end_idx != 0:
+                json_str = evaluation_output[start_idx:end_idx]
+                evaluation_result = json.loads(json_str)
+                return evaluation_result
+            else:
+                print(f"Warning: No JSON found after EVAL_MARKER in stdout")
+                print(f"Evaluation output: {evaluation_output[:500]}...")
+                return {}
+        except json.JSONDecodeError as e:
+            print(f"Warning: Failed to parse JSON from evaluation output: {e}")
+            print(f"Raw output after marker: {evaluation_output[:500]}...")
+            return {}
+    else:
+        print(f"Warning: EVAL_MARKER '{marker}' not found in stdout")
+        print(f"Stdout: {stdout[:500]}...")
+        if stderr:
+            print(f"Stderr: {stderr[:500]}...")
+        return {}
 
 class LLMServer():
 
@@ -71,7 +103,7 @@ class LLMServer():
 
 
 class FakeLLMServer():
-    def __init__(self,**kwargs):
+    def __init__(self,*argv,**kwargs):
         print("Fake Server Running...")
     
     def call_server(self, *argv,**kwargs):

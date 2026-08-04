@@ -1,9 +1,10 @@
 class SingleCandidate():
-    def __init__(self, path, score, other=None, error=None,**kwargs):
+    def __init__(self, path, score, other=None, error=None, prompt_data=None, **kwargs):
         self.path=path
         self.score=score
         self.other=other
         self.error=error
+        self.prompt_data=prompt_data
         self.kwargs=kwargs
 
 
