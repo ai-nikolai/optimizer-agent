@@ -1,8 +1,10 @@
 class SingleCandidate():
-    def __init__(self, path, score, other=None):
+    def __init__(self, path, score, other=None, error=None,**kwargs):
         self.path=path
         self.score=score
         self.other=other
+        self.error=error
+        self.kwargs=kwargs
 
 
 class Candidates():

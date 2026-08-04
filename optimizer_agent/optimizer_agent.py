@@ -70,7 +70,6 @@ class Agent():
         self.model_params=model_params
 
         # RUNTIME
-        # self.prompt_data = {}
         self.experiments_dir = None
         self.baseline_path = None
         self.evaluate_path = None
@@ -86,17 +85,13 @@ class Agent():
         experiments_dir="opt_agent_experiment",
     ):
         """The main entry point"""
-        # self.prompt_data = {}
         self.experiments_dir = Path(experiments_dir).mkdir(parents=True, exist_ok=True)
         
         self.baseline_path = baseline
-        # self.prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
         
         self.evaluate_path = evaluate
         
         self.reference_path = reference
-        # if reference:
-            # self.prompt_data.update({"reference":self._read_file(self.reference_path)})
 
         for idx in range(self.num_iterations):
             print(f"====================================")
@@ -112,19 +107,34 @@ class Agent():
     
 
     def get_prompt_data(self):
+        prompt_data = {}
         
+        if self.reference_path:
+            prompt_data.update({"reference":self._read_file(self.reference_path)})
+
+        return prompt_data
+
 
     def run_single_island(self, iteration_idx, island_idx):
+        prompt_data = self.get_prompt_data()
         if iteration_idx == 0:
-            self.candidates[island_idx] = predecessor_candidates_class(num_map_elites=self.num_map_elites)
+            self.candidates[island_idx] = self.predecessor_candidates_class(num_map_elites=self.num_map_elites)
+            prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
+            self.run_single_generation(iteration_idx,island_idx,prompt_data)
+        else:
+            current_candidates_object = self.candidates[island_idx]
+
+            best_candidates = current_candidates_object.get_best()
+            num_candidates = len(best_candidates)
+
+            for key,candidate in best_candidates.items():
+                prompt_data.update({"current_implementation":self._read_file(self.candidate.path)})
+                self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
+
+    def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
+        print(f'---- Running generation {iteration_idx},{island_idx} ----')
         
-        current_candidates_object = self.candidates[island_idx]
 
-        best_candidates = current_candidates_object.get_best()
-        num_candidates = len(best_candidates)
-
-        for key,candidate in best_candidates.items():
-            prompt_data = {}
 
     def __repr__(self):
         out = ""
