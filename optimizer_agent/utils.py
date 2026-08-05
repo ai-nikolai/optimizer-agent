@@ -2,6 +2,43 @@ import requests
 import json
 import argparse
 
+
+def extract_final_code_response(response):
+    """Extract the final code response from a LLM response string.
+
+    Args:
+        response (str): The full response from the LLM.
+
+    Returns:
+        str: The extracted code block, or the original response if no code block is found.
+    """
+    # Look for the start of a code block, usually marked by triple backticks
+    start_marker = "```"
+    code_start = response.find(start_marker)
+
+    # If no code block is found, return the original response
+    if code_start == -1:
+        return response
+
+    # Find the end of the code block
+    # The end marker is just the triple backticks, not including the language identifier
+    code_end = response.find(start_marker, code_start + len(start_marker))
+
+    # If no closing backticks are found, return from the start (including language identifier if present) to the end
+    if code_end == -1:
+        return response[code_start + len(start_marker):]
+
+    # Otherwise, extract the code between the two markers,
+    # skipping any language identifier that may follow the opening backticks
+    code_content_start = code_start + len(start_marker)
+    # Find the position after any language identifier (e.g., "python", "c++", etc.)
+    # by looking for the first newline after the opening backticks
+    first_newline = response.find("\n", code_content_start)
+    if first_newline != -1 and first_newline < code_end:
+        code_content_start = first_newline + 1
+    return response[code_content_start:code_end]
+
+
 def extract_eval_results(stdout):
     # Extract the final JSON output after EVAL_MARKER
     marker = "=== Evaluation Result ==="
@@ -35,128 +72,18 @@ def extract_eval_results(stdout):
             print(f"Stderr: {stderr[:500]}...")
         return {}
 
-class LLMServer():
 
-    def __init__(self, server_url=None, api_key=None,):
-        self.server_url = server_url
-        self.api_key = api_key
+
+if __name__=="__main__":
+    out_dict = {'combined_score':0.1}
     
-    
-    def call_server(self, messages, max_tokens=2048, temperature=0.0, top_p=0.95, model="default", tools=None,):
-        """
-        Querying an OpenAI-compatible server (local or remote) using the requests library.
-        Supports authentication via API key if provided.
-        """
-        url = f"{self.server_url}/v1/chat/completions"
+    eval_results = f"""random string\nand another
+=== Evaluation Result ===
+{json.dumps(out_dict)}
+"""
+    print(eval_results)
+    results = extract_eval_results(eval_results)
 
-        headers = {
-            "Content-Type": "application/json"
-        }
-        if api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+    print(results)
 
-        payload = {
-            "model": model,
-            "messages": messages,
-            "temperature": temperature,
-            # "max_tokens": max_tokens,
-            # "top_p": top_p
-        }
-
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
-
-        try:
-            response = requests.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=60
-            )
-            response.raise_for_status()
-
-            # TODO change this for multiple responses.
-            result = response.json().get("choices", [{}])[0].get("message", {})
-            content = result.get("content", "")
-            tool_calls = result.get("tool_calls", [])
-
-            return [content], tool_calls
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling OpenAI Server...: {e}")
-            return None, None
-        except (json.JSONDecodeError, KeyError, IndexError) as e:
-            print(f"Error processing response: {e}")
-            return None, None
-
-    def call_server_prompt(self, prompt, max_tokens=1024, temperature=0.0, top_p=0.95, model="default", tools=None):
-        """
-        OpenAI compatible call, pre-creating the messages object.
-        """
-        messages = [
-                {"role": "user", "content": prompt}
-            ]
-
-        return self.call_server(messages, max_tokens, temperature, top_p, model, tools=tools)
-
-
-
-class FakeLLMServer():
-    def __init__(self,*argv,**kwargs):
-        print("Fake Server Running...")
-    
-    def call_server(self, *argv,**kwargs):
-        return ["fake server response"]
-    
-    def call_server_prompt(self, *argv,**kwargs):
-        return ["fake prompt response"]
-    
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Agent loop for interacting with a language model")
-    parser.add_argument("--host", type=str, default="localhost", help="API host")
-    parser.add_argument("--port", type=int, default=30000, help="API port")
-    parser.add_argument("--prompt", type=str, default="What is the purpose of life?", help="prompt")
-    parser.add_argument("--api-key", type=str, default=None, help="API key for authentication (optional)")
-
-    return parser.parse_args()
-
-
-if __name__ == '__main__':
-    args = parse_args()
-    # Configuration for local SGLang deployment
-    server_url=f"http://{args.host}:{args.port}" 
-
-    print("="*60)
-    print("Entering LLM call:")
-    print("-"*30)
-    prompt = args.prompt
-
-    print(f"Prompt:\n{prompt}")
-    print("---")
-
-    server = LLMServer(server_url, args.api_key)
- 
-    response_text, tool_calls = server.call_server_prompt(prompt)
-    print(f"Response:\n{response_text}")
-    print("---")
-    print(f"Tools:\n{tool_calls}")
-    print("---")
-
-
-
-    # #################################
-    # Test call to DeepSeek endpoint
-    # #################################
-
-    # deepseek_server_url = "https://api.deepseek.com"
-    # deepseek_model = "deepseek-v4-flash"
-    # print("="*60)
-    # print("Entering DeepSeek call:")
-    # print("-"*30)
-    # response_text_ds, tools_ds = call_openai_server_prompt(prompt, server_url=deepseek_server_url, api_key=args.api_key, model=deepseek_model, tools=tools_dict)
-    # print(f"DeepSeek Response:\n{response_text_ds}")
-    # print("---")
-    # print(f"Tools:\n{tools_ds}")
-    # print("---")
+    print(results==out_dict)

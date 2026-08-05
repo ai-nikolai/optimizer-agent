@@ -10,8 +10,8 @@ def evaluate(*argv, **kwargs):
 # ----------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--reference", required=True)
-    ap.add_argument("--solution", required=True)
+    ap.add_argument("--reference", type=str, required=True)
+    ap.add_argument("--solution", type=str, required=True)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--trials", type=int, default=3, help="Number of correctness trials")
     ap.add_argument("--perf", type=int, default=10, help="Number of timing trials")

@@ -18,10 +18,13 @@ from optimizer_agent.candidates import (
 )
 from optimizer_agent.agent_strategies import CoreAgent
 
-from optimizer_agent.utils import (
-    extract_eval_results,
+from optimizer_agent.utils_llm import (
     LLMServer,
     FakeLLMServer
+)
+
+from optimizer_agent.utils import (
+    extract_eval_results,
 )
 
 

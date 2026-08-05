@@ -11,6 +11,7 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py --original reference_29.py --new basel
 
 import os
 import argparse, gc, threading, traceback
+import json
 from pathlib import Path
 import torch
 import numpy as np
@@ -335,7 +336,8 @@ def main():
     print("\n=== Evaluation Result ===")
     # for k, v in result.items():
     #     print(f"{k:25s}: {v}")
-    pprint(result)
+    # pprint(result)
+    json.dumps(result)
 
 if __name__ == "__main__":
     main()

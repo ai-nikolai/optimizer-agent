@@ -1,8 +1,8 @@
 optimizer-agent \
-    --baseline ./examples/cuda_engineering/baseline.py \
-    --reference ./examples/cuda_engineering/reference.py \
-    --evaluate ./examples/cuda_engineering/evaluate.py \
-    --prompt-config-file ./examples/cuda_engineering/prompt_config.json
+    --baseline ./examples/test_example/baseline.py \
+    --reference ./examples/test_example/reference.py \
+    --evaluate ./examples/test_example/evaluate.py \
+    --prompt-config-file ./examples/test_example/prompt_config.json
 
 
 # optimizer-agent --baseline baseline.py --evaluate evaluate.py
