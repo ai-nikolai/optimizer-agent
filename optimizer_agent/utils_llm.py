@@ -19,7 +19,7 @@ class LLMServer():
         headers = {
             "Content-Type": "application/json"
         }
-        if api_key:
+        if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
         payload = {

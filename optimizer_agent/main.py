@@ -99,8 +99,8 @@ class Agent():
         self.model_api_key=model_api_key
         self.model_params=model_params
 
-        self.server = FakeLLMServer(model_url, model_api_key)
-        # self.server = LLMServer()
+        # self.server = FakeLLMServer(model_url, model_api_key)
+        self.server = LLMServer(model_url, model_api_key)
 
         # RUNTIME
         self.experiments_dir = None
@@ -163,7 +163,7 @@ class Agent():
             prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
             
             candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data)
-            current_candidates_object.update_candidates(candidate)
+            current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
         else:
             current_candidates_object = self.candidates[island_idx]
 
@@ -173,7 +173,8 @@ class Agent():
             for key,candidate in best_candidates.items():
                 prompt_data = candidate.prompt_data
                 candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
-                current_candidates_object.update_candidates(candidate)
+                # other needs to be cluster info for map_elites...
+                current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
 
     def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
         """ 
@@ -183,18 +184,26 @@ class Agent():
         
         """
         response_data, prompt_data = self.core_agent.generate_response(prompt_data) 
-        response_data, prompt_data = self.run_eval_and_safe(iteration_idx, island_idx, response_data, prompt_data)
+        response_data, prompt_data, target_file_name, success  = self.run_eval_and_safe(iteration_idx, island_idx, response_data, prompt_data)
 
         if not success and self.use_debug:
             for idx in range(self.num_debug_iterations):
                 print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
-    
+        
+        # Return working candidate
+        candidate = SingleCandidate(target_file_name, prompt_data["scores"], other=other, prompt_data=prompt_data)
+
+        return candidate
+
+
     def run_eval_and_safe(self, iteration_idx, island_idx, response_data, prompt_data, is_debug=False):
         solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
         
-        target_file_name = solutions_dir / ResponseEnum.CORE_RESPONSE.value+".py"
+        file_name = ResponseEnum.CORE_RESPONSE.value+".py"
 
-        scores, stdout, stderr, success = self.run_eval(target_file_name)
+        target_file_name = solutions_dir / file_name
+
+        scores, stdout, stderr, success = self._run_eval(target_file_name)
         
         response_data[ResponseEnum.SCORES.value] = scores
         response_data[ResponseEnum.EVAL_STDOUT.value] = stdout
@@ -204,7 +213,7 @@ class Agent():
 
         _, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
 
-        return response_data, prompt_data
+        return response_data, prompt_data, target_file_name, success
 
     def log_response_data(self, response_data, iteration_idx, island_idx, is_debug=False):
         """All sorts of saving to files..."""

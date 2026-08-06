@@ -1,10 +1,11 @@
 class SingleCandidate():
-    def __init__(self, path, score, other=None, error=None, prompt_data=None, **kwargs):
+    def __init__(self, path, scores, other=None, prompt_data=None, **kwargs):
         self.path=path
-        self.score=score
+        self.score = scores["combined_score"]
+        self.scores=scores
         self.other=other
-        self.error=error
         self.prompt_data=prompt_data
+        # self.response_data=response_data
         self.kwargs=kwargs
 
 
@@ -43,14 +44,19 @@ class CandidatesBestNLast(Candidates):
         return self.best
     
     def update_candidates(self, candidate, current_iteration, *argv, **kwargs):
-        if current_iteration > self.current_iteration:
-            self.candidates = []
+        if not self.current_iteration:
+            self.candidates = [candidate]
             self.current_iteration = current_iteration
         else:
-            self.candidates.append(candidate)
-            if self.best:
-                if best.score < candidate.score:
-                    self.best["bestN_last"] = candidate
+            if current_iteration > self.current_iteration:
+                self.candidates = [candidate]
+                self.current_iteration = current_iteration
+            else:
+                self.candidates.append(candidate)
+        
+        if self.best:
+            if best.score < candidate.score:
+                self.best["bestN_last"] = candidate
 
 
 class MapElitesCandidates(Candidates):
