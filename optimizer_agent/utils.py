@@ -41,6 +41,7 @@ def extract_final_code_response(response):
 
 def extract_eval_results(stdout):
     # Extract the final JSON output after EVAL_MARKER
+    default_eval_results = {'combined_score': -float("inf")}
     marker = "=== Evaluation Result ==="
     if marker in stdout:
         # Get everything after the marker
@@ -56,21 +57,22 @@ def extract_eval_results(stdout):
             if start_idx != -1 and end_idx != 0:
                 json_str = evaluation_output[start_idx:end_idx]
                 evaluation_result = json.loads(json_str)
+                print(f"Info: Got eval results: {evaluation_result}.")
                 return evaluation_result
             else:
                 print(f"Warning: No JSON found after EVAL_MARKER in stdout")
                 print(f"Evaluation output: {evaluation_output[:500]}...")
-                return {}
+                return default_eval_results
         except json.JSONDecodeError as e:
             print(f"Warning: Failed to parse JSON from evaluation output: {e}")
             print(f"Raw output after marker: {evaluation_output[:500]}...")
-            return {}
+            return default_eval_results
     else:
         print(f"Warning: EVAL_MARKER '{marker}' not found in stdout")
         print(f"Stdout: {stdout[:500]}...")
         if stderr:
             print(f"Stderr: {stderr[:500]}...")
-        return {}
+        return default_eval_results
 
 
 

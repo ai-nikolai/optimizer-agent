@@ -337,7 +337,7 @@ def main():
     # for k, v in result.items():
     #     print(f"{k:25s}: {v}")
     # pprint(result)
-    json.dumps(result)
+    print(json.dumps(result))
 
 if __name__ == "__main__":
     main()

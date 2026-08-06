@@ -1,5 +1,6 @@
 import os
 import argparse
+import json
 from pprint import pprint
 
 def evaluate(*argv, **kwargs):
@@ -26,7 +27,8 @@ def main():
     )
 
     print("\n=== Evaluation Result ===")
-    pprint(result)
+    print(json.dumps(result))
+    # pprint(result)
 
 if __name__ == "__main__":
     main()

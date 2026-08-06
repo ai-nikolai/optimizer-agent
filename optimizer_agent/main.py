@@ -16,7 +16,7 @@ from optimizer_agent.candidates import (
     CandidatesBestNLast,
     MapElitesCandidates
 )
-from optimizer_agent.agent_strategies import CoreAgent
+from optimizer_agent.baseagents import CoreAgent
 
 from optimizer_agent.utils_llm import (
     LLMServer,
@@ -171,7 +171,12 @@ class Agent():
                 current_candidates_object.update_candidates(candidate)
 
     def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
-        """ A single generation with debugging..."""
+        """ 
+        A single generation with debugging...
+
+        TODO: Change this to a strategy as well. Similar to CoreAgent, such that this can be easily changed...
+        
+        """
         response, prompt_data = self.core_agent.generate_response(prompt_data)
         
         temp_file = tempfile.NamedTemporaryFile(delete = False)
@@ -183,6 +188,10 @@ class Agent():
         if not success and self.use_debug:
             for idx in range(self.num_debug_iterations):
                 print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
+        
+    def save_files(self, response_data):
+        """Saves files for this candidate..."""
+        pass
 
     def run_eval(self, new_path):
         # call subprocess

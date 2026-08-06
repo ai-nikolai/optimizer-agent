@@ -16,7 +16,7 @@ class Candidates():
     def get_best(self):
         raise NotImplementedError()
     
-    def update_candidates(self, candidate, **kwargs):
+    def update_candidates(self, candidate, *argv, **kwargs):
         raise NotImplementedError()
 
 class CandidatesBestNAll(Candidates):
@@ -27,7 +27,7 @@ class CandidatesBestNAll(Candidates):
     def get_best(self):
         return self.best
     
-    def update_candidates(self, candidate, **kwargs):
+    def update_candidates(self, candidate, *argv, **kwargs):
         self.candidates.append(candidate)
         if self.best:
             if best.score < candidate.score:
@@ -42,7 +42,7 @@ class CandidatesBestNLast(Candidates):
     def get_best(self):
         return self.best
     
-    def update_candidates(self, candidate, current_iteration, **kwargs):
+    def update_candidates(self, candidate, current_iteration, *argv, **kwargs):
         if current_iteration > self.current_iteration:
             self.candidates = []
             self.current_iteration = current_iteration
@@ -80,7 +80,7 @@ class MapElitesCandidates(Candidates):
                 break
         self.best_scores.append((existing_key,new_score))
 
-    def update_candidates(self, candidate, **kwargs):
+    def update_candidates(self, candidate, *argv, **kwargs):
         """Updates map elites... based on 'other' key """
         new_key = candidate.other
 
