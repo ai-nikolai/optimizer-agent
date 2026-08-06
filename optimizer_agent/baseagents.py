@@ -1,3 +1,5 @@
+from enum import Enum
+
 from optimizer_agent import utils
 from optimizer_agent import utils_prompt
 
@@ -5,8 +7,25 @@ from optimizer_agent.utils import (
     extract_final_code_response,
 )
 
-class CoreAgent():
-    
+class ResponseEnum(Enum):
+    STRATEGY_PROMPT="strategy_prompt"
+    STRATEGY_RESPONSE_RAW="strategy_response_raw"
+
+    CORE_PROMPT="core_prompt"
+    CORE_RESPONSE_RAW="core_response_raw"
+    CORE_RESPONSE="core_response"
+
+    FEEDBACK_PROMPT="feedback_prompt"
+    FEEDBACK_RESPONSE_RAW="feedback_response_raw"
+
+    SCORES="scores"
+    EVAL_STDOUT="eval_stdout"
+    EVAL_STDERR="eval_stdout"
+
+# TODO: FIL can be implemented here by changing the feedback mechanism... (as a special case for the debug agent)
+# TODO: DIFF Agent can be maybe implemented here as well...
+
+class CoreAgent():    
     def __init__(self, server, prompt_config=None, use_strategy=False, use_feedback=False):
         self.server = server
 
@@ -25,8 +44,8 @@ class CoreAgent():
             
             response_strat = self.server.call_server(messages_strat)[0]
             
-            out_dict.update({"strategy_prompt" : messages_strat})
-            out_dict.update({"strategy_response" : response_strat})
+            out_dict.update({ResponseEnum.STRATEGY_PROMPT.value : messages_strat})
+            out_dict.update({ResponseEnum.STRATEGY_RESPONSE_RAW.value : response_strat})
 
             prompt_data.update({"strategy" : response_strat})
         
@@ -36,22 +55,23 @@ class CoreAgent():
         messages_core = utils_prompt.create_prompt(prompt_type="core", prompt_data=prompt_data, prompt_config=self.prompt_config)
         response_core = self.server.call_server(messages_core)[0]
         response_core_clean = extract_final_code_response(response_core)
-        out_dict.update({"core_prompt" : messages_core})
-        out_dict.update({"core_response" : response_core})
-        out_dict.update({"core_response_clean" : response_core_clean})
+        out_dict.update({ResponseEnum.CORE_PROMPT.value : messages_core})
+        out_dict.update({ResponseEnum.CORE_RESPONSE_RAW.value : response_core})
+        out_dict.update({ResponseEnum.CORE_RESPONSE.value : response_core_clean})
         
         prompt_data.update({"new_implementation" : response_core_clean})           
         
         # ###########
         # Feedback
         # ###########
+        # TODO: FIL can be implemented here by changing the feedback mechanism...
         if self.use_feedback:
             messages_feed = utils_prompt.create_prompt(prompt_type="feedback", prompt_data=prompt_data, prompt_config=self.prompt_config)
             
             response_feed = self.server.call_server(messages_feed)[0]
             
-            out_dict.update({"feedback_prompt" : messages_feed})
-            out_dict.update({"feedback_response" : response_feed})
+            out_dict.update({ResponseEnum.FEEDBACK_PROMPT.value : messages_feed})
+            out_dict.update({ResponseEnum.FEEDBACK_RESPONSE_RAW.value : response_feed})
 
             prompt_data.update({"feedback" : response_strat})
 

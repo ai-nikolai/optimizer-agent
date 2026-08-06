@@ -16,7 +16,10 @@ from optimizer_agent.candidates import (
     CandidatesBestNLast,
     MapElitesCandidates
 )
-from optimizer_agent.baseagents import CoreAgent
+from optimizer_agent.baseagents import (
+    CoreAgent,
+    ResponseEnum
+)
 
 from optimizer_agent.utils_llm import (
     LLMServer,
@@ -108,13 +111,14 @@ class Agent():
         # Candidates
         self.candidates = {}
 
-        # Agent init:
         self.core_agent = CoreAgent(self.server, prompt_config=self.prompt_config["improve"], use_strategy=use_strategy, use_feedback=use_feedback)
         
         if use_debug:
             self.debug_agent = CoreAgent(self.server, prompt_config=self.prompt_config["debug"], use_strategy=use_debug_strategy, use_feedback=use_debug_feedback)
         else:
             self.debug_agent = None
+
+
     
     def run(self,
         baseline, 
@@ -123,7 +127,8 @@ class Agent():
         experiments_dir="opt_agent_experiment",
     ):
         """The main entry point"""
-        self.experiments_dir = Path(experiments_dir).mkdir(parents=True, exist_ok=True)
+        self.experiments_dir = Path(experiments_dir)
+        self.experiments_dir.mkdir(parents=True, exist_ok=True)
         self.baseline_path = baseline
         self.evaluate_path = evaluate
         self.reference_path = reference
@@ -177,23 +182,68 @@ class Agent():
         TODO: Change this to a strategy as well. Similar to CoreAgent, such that this can be easily changed...
         
         """
-        response, prompt_data = self.core_agent.generate_response(prompt_data)
-        
-        temp_file = tempfile.NamedTemporaryFile(delete = False)
-        temp_file.write(response["core_response_clean"].encode('utf-8'))
-        temp_file.close()
-        scores, stdout, stderr, success = self.run_eval(temp_file.name)
-        os.remove(temp_file.name)
+        response_data, prompt_data = self.core_agent.generate_response(prompt_data) 
+        response_data, prompt_data = self.run_eval_and_safe(iteration_idx, island_idx, response_data, prompt_data)
 
         if not success and self.use_debug:
             for idx in range(self.num_debug_iterations):
                 print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
+    
+    def run_eval_and_safe(self, iteration_idx, island_idx, response_data, prompt_data, is_debug=False):
+        solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
         
-    def save_files(self, response_data):
-        """Saves files for this candidate..."""
-        pass
+        target_file_name = solutions_dir / ResponseEnum.CORE_RESPONSE.value+".py"
 
-    def run_eval(self, new_path):
+        scores, stdout, stderr, success = self.run_eval(target_file_name)
+        
+        response_data[ResponseEnum.SCORES.value] = scores
+        response_data[ResponseEnum.EVAL_STDOUT.value] = stdout
+        response_data[ResponseEnum.EVAL_STDERR.value] = stderr
+
+        prompt_data["scores"] = scores
+
+        _, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
+
+        return response_data, prompt_data
+
+    def log_response_data(self, response_data, iteration_idx, island_idx, is_debug=False):
+        """All sorts of saving to files..."""
+        # Determine the file name based on whether it's debug or not
+        # print(f"we are here::{self.experiments_dir},,{response_data},, {iteration_idx},, {island_idx},, {is_debug}")
+        solution_dir = Path(self.experiments_dir) / f"solutions" / f"iteration_{iteration_idx}_{island_idx}"
+        
+        solution_dir.mkdir(parents=True, exist_ok=True)
+        # print(solutions_dir)
+
+        appendix = ""
+        if is_debug:
+            appendix = f"_debug"
+        success = False
+        for key, value in response_data.items():
+            
+            if key == ResponseEnum.SCORES.value:
+                file_ending = ".json"
+                value = json.dumps(value)
+
+            elif key == ResponseEnum.CORE_RESPONSE.value:
+                file_ending = ".py"
+                success = True
+            elif "prompt" in key:
+                file_ending = ".json"
+                value = json.dumps(value)
+            else:
+                file_ending = ".txt"
+            
+            file_name = key+appendix+file_ending
+
+            if not os.path.exists(file_name):
+                # Save the core response clean code
+                with open(solution_dir / file_name, 'w', encoding='utf-8') as f:
+                    f.write(value)
+
+        return solution_dir, success
+
+    def _run_eval(self, new_path):
         # call subprocess
         eval_command = ["python", self.evaluate_path]
 
@@ -218,11 +268,6 @@ class Agent():
         return extract_eval_results(stdout), stdout, stderr, success
 
         
-    
-    def log_single_generation(self, iteration_idx, island_idx, other=None, is_debug=False):
-        """All sorts of saving to files..."""
-        pass
-
 
     def __repr__(self):
         out = ""
