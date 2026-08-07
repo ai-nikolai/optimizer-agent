@@ -7,6 +7,8 @@ Assumes CUDA_VISIBLE_DEVICES is set.
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py --original reference_29.py --new baseline_29.py
 
+CUDA_VISIBLE_DEVICES=1 python ./examples/cuda_engineering/evaluate.py --reference ./examples/cuda_engineering/reference.py --solution opt_agent_experiment/solutions/iteration_0_0/core_response.py
+
 """
 
 import os

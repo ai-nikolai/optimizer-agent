@@ -51,6 +51,10 @@ def parse_args():
     parser.add_argument("--model-api-key", type=str, default=None, help="Model API key")
     parser.add_argument("--model-params", type=json.loads, default={}, help="Model parameters as JSON string, e.g. '{\"temperature\": 0.1}'")
 
+    # testing the agent
+    parser.add_argument("--test", action="store_true", help="Test the engine")
+
+
     # Running the agent
     parser.add_argument("--baseline", type=str, required=True, help="Baseline Function")
     parser.add_argument("--evaluate", type=str, required=True, help="Evaluate function")
@@ -90,7 +94,8 @@ def main():
         model_name=args.model_name,
         model_url=args.model_url,
         model_api_key=args.model_api_key,
-        model_params=args.model_params #dictionary e.g. {'temperature':0.1}
+        model_params=args.model_params, #dictionary e.g. {'temperature':0.1}
+        test=args.test,
     )
 
     agent.run(

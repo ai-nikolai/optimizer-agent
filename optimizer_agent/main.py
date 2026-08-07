@@ -57,7 +57,9 @@ class Agent():
         model_name="default",
         model_url="http://0.0.0.0:30000",
         model_api_key="<no_key>",
-        model_params=None #dictionary e.g. {'temperature':0.1}
+        model_params=None, #dictionary e.g. {'temperature':0.1}
+        # if we should test the agent (fake server)
+        test=False
     ):
         """Init func"""
         self.num_iterations=num_iterations
@@ -99,8 +101,10 @@ class Agent():
         self.model_api_key=model_api_key
         self.model_params=model_params
 
-        # self.server = FakeLLMServer(model_url, model_api_key)
-        self.server = LLMServer(model_url, model_api_key)
+        if test:
+            self.server = FakeLLMServer(model_url, model_api_key)
+        else:
+            self.server = LLMServer(model_url, model_api_key)
 
         # RUNTIME
         self.experiments_dir = None
@@ -264,10 +268,14 @@ class Agent():
         eval_command += ["--solution", new_path]
 
         # Run the subprocess
-        result = subprocess.run(eval_command, check=True, capture_output=True, text=True)
-        # Capture stdout and stderr
-        stdout = result.stdout
-        stderr = result.stderr
+        try:
+            result = subprocess.run(eval_command, check=True, capture_output=True, text=True)
+            # Capture stdout and stderr
+            stdout = result.stdout
+            stderr = result.stderr
+        except Exception as e:
+            print("Calling Eval failed.")
+            print(e)
         # Check if the evaluation was successful
         if result.returncode == 0:
             success = True

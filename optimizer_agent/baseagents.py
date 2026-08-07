@@ -42,7 +42,8 @@ class CoreAgent():
         if self.use_strategy:
             messages_strat = utils_prompt.create_prompt(prompt_type="strategy", prompt_data=prompt_data, prompt_config=self.prompt_config)
             
-            response_strat = self.server.call_server(messages_strat)[0]
+            response_strat_list, _ = self.server.call_server(messages_strat)
+            response_strat = response_strat_list[0]
             
             out_dict.update({ResponseEnum.STRATEGY_PROMPT.value : messages_strat})
             out_dict.update({ResponseEnum.STRATEGY_RESPONSE_RAW.value : response_strat})
@@ -53,7 +54,9 @@ class CoreAgent():
         # Core
         # ###########
         messages_core = utils_prompt.create_prompt(prompt_type="core", prompt_data=prompt_data, prompt_config=self.prompt_config)
-        response_core = self.server.call_server(messages_core)[0]
+        response_core_list, _ = self.server.call_server(messages_core)
+        response_core = response_core_list[0]
+
         response_core_clean = extract_final_code_response(response_core)
         out_dict.update({ResponseEnum.CORE_PROMPT.value : messages_core})
         out_dict.update({ResponseEnum.CORE_RESPONSE_RAW.value : response_core})
@@ -68,7 +71,8 @@ class CoreAgent():
         if self.use_feedback:
             messages_feed = utils_prompt.create_prompt(prompt_type="feedback", prompt_data=prompt_data, prompt_config=self.prompt_config)
             
-            response_feed = self.server.call_server(messages_feed)[0]
+            response_feed_list, _ = self.server.call_server(messages_feed)
+            response_feed = response_feed_list[0]
             
             out_dict.update({ResponseEnum.FEEDBACK_PROMPT.value : messages_feed})
             out_dict.update({ResponseEnum.FEEDBACK_RESPONSE_RAW.value : response_feed})

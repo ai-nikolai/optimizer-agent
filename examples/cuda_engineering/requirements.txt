@@ -1,0 +1,13 @@
+# numpy==2.3.3
+torch==2.8.0
+tqdm==4.67.1
+datasets==4.0.0
+pydantic==2.11.9 #this is needed (for eval results from KernelBench)
+ninja==1.13.0 #this is needed to compile C++ extensions for Pytorch...
+hf_transfer==0.1.9
+nvidia-ml-py==13.580.82 #for GPU memory reading...
+vllm==0.10.2 #requires glibC>2.31 (due to Github worker)
+matplotlib==3.10.7 #for plotting and analysis
+tomli==2.3.0 #for KB prompts...
+triton==3.4.0 #to fix the version
+transformers==4.57.6
