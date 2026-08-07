@@ -10,3 +10,5 @@ opt_agent_experiment*
 
 optimizer_agent_ai.py
 agent_strategies.py
+
+dist/
