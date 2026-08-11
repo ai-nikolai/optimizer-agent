@@ -74,10 +74,10 @@ class FakeLLMServer():
         print("Fake Server Running...")
     
     def call_server(self, *argv,**kwargs):
-        return ["fake server response"]
+        return ["fake server response"], None
     
     def call_server_prompt(self, *argv,**kwargs):
-        return ["fake prompt response"]
+        return ["fake prompt response"], None
     
 
 def parse_args():

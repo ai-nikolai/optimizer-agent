@@ -1,11 +1,13 @@
 import os
 import argparse
 import json
+import random
+
 from pprint import pprint
 
 def evaluate(*argv, **kwargs):
     results = {}
-    results["combined_score"] = 0.1
+    results["combined_score"] = random.random()
     return results
 
 # ----------------------------------------------------------------------

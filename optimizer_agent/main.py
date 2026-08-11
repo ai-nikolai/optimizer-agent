@@ -139,7 +139,7 @@ class Agent():
 
         for idx in range(self.num_iterations):
             print(f"====================================")
-            print(f"\n---- Running Iteration: {idx}/{self.num_iterations} ----")
+            print(f"---- Running Iteration: {idx}/{self.num_iterations} ----")
             print(self)
             self.run_single_iteration(idx)
     
@@ -170,6 +170,8 @@ class Agent():
             current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
         else:
             current_candidates_object = self.candidates[island_idx]
+
+            print(current_candidates_object)
 
             best_candidates = current_candidates_object.get_best()
             num_candidates = len(best_candidates)

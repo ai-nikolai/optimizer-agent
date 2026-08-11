@@ -12,7 +12,8 @@ class SingleCandidate():
 class Candidates():
     def __init__(self,**kwargs):
         self.candidates = []
-        self.best = None
+        self.best = {}
+        self.name="DEFAULT CLASS"
     
     def get_best(self):
         raise NotImplementedError()
@@ -20,26 +21,40 @@ class Candidates():
     def update_candidates(self, candidate, *argv, **kwargs):
         raise NotImplementedError()
 
+    def __repr__(self):
+        representation = "-- Candidates Object: --\n"
+        representation += f"Name: {self.name}\n"
+        for key,value in self.best.items():
+            representation += f"{key} : {value.score}\n"
+        
+        representation += "--end--"
+        return representation
+
 class CandidatesBestNAll(Candidates):
     def __init__(self,**kwargs):
         self.candidates = []
-        self.best = None
+        self.best = {}
+        self.name="bestN_all"
     
     def get_best(self):
         return self.best
     
     def update_candidates(self, candidate, *argv, **kwargs):
         self.candidates.append(candidate)
+
         if self.best:
-            if best.score < candidate.score:
-                self.best["bestN_all"] = candidate
+            if self.best[self.name].score < candidate.score:
+                self.best[self.name] = candidate
+        else:
+            self.best[self.name] = candidate
 
 class CandidatesBestNLast(Candidates):
     def __init__(self,**kwargs):
         self.candidates = []
-        self.best = None
+        self.best = {}
         self.current_iteration = None
-    
+        self.name="bestN_last"
+
     def get_best(self):
         return self.best
     
@@ -55,8 +70,10 @@ class CandidatesBestNLast(Candidates):
                 self.candidates.append(candidate)
         
         if self.best:
-            if best.score < candidate.score:
-                self.best["bestN_last"] = candidate
+            if self.best[self.name].score < candidate.score:
+                self.best[self.name] = candidate
+        else:
+            self.best[self.name] = candidate
 
 
 class MapElitesCandidates(Candidates):
@@ -66,6 +83,7 @@ class MapElitesCandidates(Candidates):
         self.best_all = {}
         self.best_scores = []
         self.num_map_elites = num_map_elites
+        self.name = "map_elites"
     
     def get_best(self): 
         """Finds the top map elites"""
