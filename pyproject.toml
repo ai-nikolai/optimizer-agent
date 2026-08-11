@@ -1,11 +1,12 @@
 [project]
 name = "optimizer-agent"
-version = "0.0.0.1"
+version = "0.0.0.2"
 description = "Optimizer Agent"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "requests>=2.32.5"
+    "requests>=2.32.5",
+    "textdistance==4.6.3"
 ]
 authors = [
     {name = "Nikolai Rozanov", email = "nikolai.rozanov@gmail.com"},

@@ -6,6 +6,8 @@ optimizer-agent \
     --num-iterations 2 \
     --num-map-elites 3 \
     --num-islands 2 \
+    --use-feedback \
+    --use-strategy \
     --predecessor-selection-method map_elites \
     --test
 
