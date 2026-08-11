@@ -2,6 +2,9 @@ import requests
 import json
 import argparse
 
+import random
+import string
+
 class LLMServer():
 
     def __init__(self, server_url=None, api_key=None,):
@@ -74,10 +77,14 @@ class FakeLLMServer():
         print("Fake Server Running...")
     
     def call_server(self, *argv,**kwargs):
-        return ["fake server response"], None
+        string_length = random.randint(150, 500)
+        generated_string = ''.join(random.choices(string.ascii_letters + string.digits, k=string_length))
+        # print(string_length)
+        # print(generated_string)
+        return [generated_string], None
     
     def call_server_prompt(self, *argv,**kwargs):
-        return ["fake prompt response"], None
+        return self.call_server(*argv, **kwargs)
     
 
 def parse_args():

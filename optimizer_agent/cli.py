@@ -35,7 +35,7 @@ def parse_args():
     # Map elites related
     parser.add_argument("--predecessor-selection-method", type=str, default="bestN_last", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"])
     parser.add_argument("--map-elites-method", type=str, default=None, help="Map elites method: cluster, fixed, dynamic ideas", choices=["cluster", "fixed", "dynamic"])
-    parser.add_argument("--num-map-elites", type=int, default=None, help="Number of map elites")
+    parser.add_argument("--num-map-elites", type=int, default=1, help="Number of map elites")
 
     # Sub-agents
     parser.add_argument("--use-strategy", action="store_true", help="Use strategy sub-agent")

@@ -4,6 +4,7 @@ optimizer-agent \
     --evaluate ./examples/test_example/evaluate.py \
     --prompt-config-file ./examples/test_example/prompt_config.json \
     --num-iterations 2 \
+    --num-map-elites 3 \
     --predecessor-selection-method map_elites \
     --test
 

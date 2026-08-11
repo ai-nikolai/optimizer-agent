@@ -9,7 +9,6 @@ import subprocess
 import uuid
 from pathlib import Path
 
-
 from optimizer_agent.candidates import (
     SingleCandidate,
     CandidatesBestNAll,
@@ -44,7 +43,7 @@ class Agent():
         # predecessor selection related (e.g. elites)
         # num_elites=args.num_elites, #is this needed?
         predecessor_selection_method="bestN_last", #bestN_last (from last generations/iterations)=sequential,parallel, bestN_all (from all generations/iterations)=graph, map_elites, (this operates within a single island)
-        num_map_elites=None, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
+        num_map_elites=1, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
         map_elites_method=None, #cluster, fixed, dynamic
         # Sub-agents
         use_strategy=False, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
@@ -196,6 +195,17 @@ class Agent():
             for idx in range(self.num_debug_iterations):
                 print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
         
+        # Map Elites stuff here...
+        if self.predecessor_selection_method == "map_elites":
+            new_generation = response_data[ResponseEnum.CORE_RESPONSE.value][:255]
+
+            if not other:
+                other = new_generation
+
+            current_candidates_object = self.candidates[island_idx]
+
+            other, distance = current_candidates_object.get_key(new_generation, other)
+            print(f"MapElites: Got key & distance: ({other}, {distance})")
         # Return working candidate
         candidate = SingleCandidate(target_file_name, prompt_data["scores"], other=other, prompt_data=prompt_data)
 
