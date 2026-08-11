@@ -132,6 +132,8 @@ class Agent():
         """The main entry point"""
         self.experiments_dir = Path(experiments_dir)
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
+        self._write_file(self.experiments_dir, "metadata.txt", str(self))
+
         self.baseline_path = baseline
         self.evaluate_path = evaluate
         self.reference_path = reference
@@ -142,13 +144,15 @@ class Agent():
             print(self)
             self.run_single_iteration(idx)
     
+    def _get_solutions_dir(self, iteration_idx, island_idx):
+        solutions_dir = Path(self.experiments_dir) / f"solutions" / f"iteration_{iteration_idx}_{island_idx}"
+        return solutions_dir
 
     def run_single_iteration(self, iteration_idx):
         for idx in range(self.num_islands):
             print(f"\n---- Running Island: {idx}/{self.num_islands} ----")
             self.run_single_island(iteration_idx, idx)
     
-
     def get_prompt_data(self):
         prompt_data = {}
         
@@ -167,6 +171,7 @@ class Agent():
             
             candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data)
             current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
+            self.log_candidates(iteration_idx, island_idx,current_candidates_object)
         else:
             current_candidates_object = self.candidates[island_idx]
 
@@ -180,7 +185,7 @@ class Agent():
                 candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
                 # other needs to be cluster info for map_elites...
                 current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
-
+                self.log_candidates(iteration_idx, island_idx,current_candidates_object)
     def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
         """ 
         A single generation with debugging...
@@ -189,7 +194,7 @@ class Agent():
         
         """
         response_data, prompt_data = self.core_agent.generate_response(prompt_data) 
-        response_data, prompt_data, target_file_name, success  = self.run_eval_and_safe(iteration_idx, island_idx, response_data, prompt_data)
+        response_data, prompt_data, target_file_name, success  = self.run_eval_and_save(iteration_idx, island_idx, response_data, prompt_data)
 
         if not success and self.use_debug:
             for idx in range(self.num_debug_iterations):
@@ -197,7 +202,7 @@ class Agent():
         
         # Map Elites stuff here...
         if self.predecessor_selection_method == "map_elites":
-            new_generation = response_data[ResponseEnum.CORE_RESPONSE.value][:255]
+            new_generation = response_data[ResponseEnum.CORE_RESPONSE.value][:1023]
 
             if not other:
                 other = new_generation
@@ -205,14 +210,15 @@ class Agent():
             current_candidates_object = self.candidates[island_idx]
 
             other, distance = current_candidates_object.get_key(new_generation, other)
-            print(f"MapElites: Got key & distance: ({other}, {distance})")
+            # print(f"MapElites: Got key & distance: ({other}, {distance})")
+
         # Return working candidate
         candidate = SingleCandidate(target_file_name, prompt_data["scores"], other=other, prompt_data=prompt_data)
 
         return candidate
 
 
-    def run_eval_and_safe(self, iteration_idx, island_idx, response_data, prompt_data, is_debug=False):
+    def run_eval_and_save(self, iteration_idx, island_idx, response_data, prompt_data, is_debug=False):
         solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
         
         file_name = ResponseEnum.CORE_RESPONSE.value+".py"
@@ -235,9 +241,9 @@ class Agent():
         """All sorts of saving to files..."""
         # Determine the file name based on whether it's debug or not
         # print(f"we are here::{self.experiments_dir},,{response_data},, {iteration_idx},, {island_idx},, {is_debug}")
-        solution_dir = Path(self.experiments_dir) / f"solutions" / f"iteration_{iteration_idx}_{island_idx}"
-        
-        solution_dir.mkdir(parents=True, exist_ok=True)
+        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx)
+
+        solutions_dir.mkdir(parents=True, exist_ok=True)
         # print(solutions_dir)
 
         appendix = ""
@@ -263,11 +269,33 @@ class Agent():
 
             if not os.path.exists(file_name):
                 # Save the core response clean code
-                with open(solution_dir / file_name, 'w', encoding='utf-8') as f:
+                with open(solutions_dir / file_name, 'w', encoding='utf-8') as f:
                     f.write(value)
+        
+        return solutions_dir, success
 
-        return solution_dir, success
+    def log_candidates(self,iteration_idx, island_idx, current_candidates_object):
+        value = str(current_candidates_object)
+        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx)
 
+        self._write_file(solutions_dir, "candidates.txt", value)
+
+    def _write_file(self, solutions_dir, file_name, content):
+        # Write candidates as well.
+        try:
+            solutions_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            print(f"failed making folder: {solutions_dir}\nError:{e}")
+
+        try:
+            file_name = f"{file_name}" 
+            # Save the core response clean code
+            with open(solutions_dir / file_name, 'w', encoding='utf-8') as f:
+                f.write(content)         
+        except Exception as e:
+            print(f"Writing File{solutions_dir}/{file_name} failed")
+            print(e)
+        
     def _run_eval(self, new_path):
         # call subprocess
         eval_command = ["python", self.evaluate_path]
