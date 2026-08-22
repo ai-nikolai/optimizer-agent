@@ -37,7 +37,7 @@ class Agent():
         num_iterations=1, #total "generations"
         num_debug_iterations=0, #num debug steps between generations
         num_islands=1, #completely independent runs (maybe with cross-over later)
-        num_beams=1, #num generations from one predecessor/predecessor group
+        num_samples=1, #num generations from one predecessor/predecessor group
         # prompts related:
         prompt_config_file=None,
         # predecessor selection related (e.g. elites)
@@ -64,7 +64,7 @@ class Agent():
         self.num_iterations=num_iterations
         self.num_debug_iterations=num_debug_iterations
         self.num_islands=num_islands
-        self.num_beams=num_beams
+        self.num_samples=num_samples
         # prompts related:
         self.prompt_config_file=prompt_config_file
 
@@ -144,8 +144,9 @@ class Agent():
             print(self)
             self.run_single_iteration(idx)
     
-    def _get_solutions_dir(self, iteration_idx, island_idx):
-        solutions_dir = Path(self.experiments_dir) / f"solutions" / f"iteration_{iteration_idx}_{island_idx}"
+    def _get_solutions_dir(self, iteration_idx, island_idx, additional_index=0):
+        appendix = f"iteration_it_{iteration_idx}_is_{island_idx}_samp_{additional_index}"
+        solutions_dir = Path(self.experiments_dir) / f"solutions" / appendix
         return solutions_dir
 
     def run_single_iteration(self, iteration_idx):
@@ -163,30 +164,51 @@ class Agent():
 
 
     def run_single_island(self, iteration_idx, island_idx):
+        """Main run of a single island"""
         if iteration_idx == 0:
-            prompt_data = self.get_prompt_data()
             current_candidates_object = self.predecessor_candidates_class(num_map_elites=self.num_map_elites)
             self.candidates[island_idx] = current_candidates_object
-            prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
+
+            if self.predecessor_selection_method == "map_elites":
+                num_actual_samples = self.num_map_elites
+            else:
+                num_actual_samples = self.num_samples
             
-            candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data)
-            current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
-            self.log_candidates(iteration_idx, island_idx,current_candidates_object)
+            for idx in range(num_actual_samples):
+                prompt_data = self.get_prompt_data()
+                prompt_data.update({"current_implementation":self._read_file(self.baseline_path)})
+                
+                candidate = self.run_single_generation(iteration_idx, island_idx, prompt_data, additional_index=idx)
+                current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
+                self.log_candidates(iteration_idx, island_idx, current_candidates_object, additional_index=idx)
+
         else:
             current_candidates_object = self.candidates[island_idx]
 
             print(current_candidates_object)
 
             best_candidates = current_candidates_object.get_best()
-            num_candidates = len(best_candidates)
 
-            for key,candidate in best_candidates.items():
-                prompt_data = candidate.prompt_data
-                candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, key)
-                # other needs to be cluster info for map_elites...
-                current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
-                self.log_candidates(iteration_idx, island_idx,current_candidates_object)
-    def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None):
+            # num_candidates = len(best_candidates)
+
+            if self.predecessor_selection_method == "map_elites":
+                num_actual_samples = 1
+            else:
+                num_actual_samples = self.num_samples
+
+            for idx, (key,candidate) in enumerate(best_candidates.items()):
+                # this accounts for both map elites and multi sample scenarios...
+                # TODO: clean-up...
+                for jdx in range(num_actual_samples):
+                    actual_index = idx*num_actual_samples+jdx
+                    prompt_data = candidate.prompt_data
+                    candidate = self.run_single_generation(iteration_idx,island_idx,prompt_data, other=key, additional_index=actual_index)
+                    # other needs to be cluster info for map_elites...
+                    current_candidates_object.update_candidates(candidate, current_iteration=iteration_idx,)
+                    self.log_candidates(iteration_idx, island_idx, current_candidates_object, additional_index=actual_index)
+
+    
+    def run_single_generation(self, iteration_idx, island_idx, prompt_data, other=None, additional_index=None):
         """ 
         A single generation with debugging...
 
@@ -194,10 +216,11 @@ class Agent():
         
         """
         response_data, prompt_data = self.core_agent.generate_response(prompt_data) 
-        response_data, prompt_data, target_file_name, success  = self.run_eval_and_save(iteration_idx, island_idx, response_data, prompt_data)
+        response_data, prompt_data, target_file_name, success  = self.run_eval_and_save(iteration_idx, island_idx, response_data, prompt_data, additional_index=additional_index)
 
         if not success and self.use_debug:
             for idx in range(self.num_debug_iterations):
+                # TODO: Add debug step...
                 print(f"Debug: {idx} -- {iteration_idx},{island_idx},{other}")
         
         # Map Elites stuff here...
@@ -218,8 +241,8 @@ class Agent():
         return candidate
 
 
-    def run_eval_and_save(self, iteration_idx, island_idx, response_data, prompt_data, is_debug=False):
-        solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
+    def run_eval_and_save(self, iteration_idx, island_idx, response_data, prompt_data,  additional_index=None, is_debug=False,):
+        solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, additional_index=additional_index, is_debug=is_debug)
         
         file_name = ResponseEnum.CORE_RESPONSE.value+".py"
 
@@ -233,15 +256,16 @@ class Agent():
 
         prompt_data["scores"] = scores
 
-        _, log_success = self.log_response_data(response_data, iteration_idx, island_idx, is_debug=is_debug)
+        solutions_dir, log_success = self.log_response_data(response_data, iteration_idx, island_idx, additional_index=additional_index, is_debug=is_debug)
 
         return response_data, prompt_data, target_file_name, success
 
-    def log_response_data(self, response_data, iteration_idx, island_idx, is_debug=False):
+
+    def log_response_data(self, response_data, iteration_idx, island_idx, additional_index, is_debug=False):
         """All sorts of saving to files..."""
         # Determine the file name based on whether it's debug or not
         # print(f"we are here::{self.experiments_dir},,{response_data},, {iteration_idx},, {island_idx},, {is_debug}")
-        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx)
+        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx, additional_index=additional_index)
 
         solutions_dir.mkdir(parents=True, exist_ok=True)
         # print(solutions_dir)
@@ -274,9 +298,9 @@ class Agent():
         
         return solutions_dir, success
 
-    def log_candidates(self,iteration_idx, island_idx, current_candidates_object):
+    def log_candidates(self,iteration_idx, island_idx, current_candidates_object, additional_index, **kwargs):
         value = str(current_candidates_object)
-        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx)
+        solutions_dir = self._get_solutions_dir(iteration_idx, island_idx, additional_index=additional_index)
 
         self._write_file(solutions_dir, "candidates.txt", value)
 
@@ -330,7 +354,7 @@ class Agent():
         out = ""
         out += f" num_debug_iterations={self.num_debug_iterations}=\n"
         out += f" num_islands={self.num_islands}=\n"
-        out += f" num_beams={self.num_beams}=\n"
+        out += f" num_samples={self.num_samples}=\n"
         # prompts related:
         out += f" prompt_config_file={self.prompt_config_file}=\n"
         

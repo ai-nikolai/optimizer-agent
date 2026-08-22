@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--num-iterations", type=int, default=1, help="Number of iterations")
     parser.add_argument("--num-debug-iterations", type=int, default=3, help="Number of debug iterations")
     parser.add_argument("--num-islands", type=int, default=1, help="Number of islands")
-    parser.add_argument("--num-beams", type=int, default=1, help="Number of beams")
+    parser.add_argument("--num-samples", type=int, default=1, help="Number of beams")
 
     # Prompts related
     parser.add_argument("--prompt-config-file", type=str, help="Path to prompt configuration file, otherwise default is used.")
@@ -75,7 +75,7 @@ def main():
         num_iterations=args.num_iterations, #total "generations"
         num_debug_iterations=args.num_debug_iterations, #num debug steps between generations
         num_islands=args.num_islands, #completely independent runs (maybe with cross-over later)
-        num_beams=args.num_beams, #num generations from one predecessor/predecessor group
+        num_samples=args.num_samples, #num generations from one predecessor/predecessor group
         # prompts related:
         prompt_config_file=args.prompt_config_file,
         # predecessor selection related (e.g. elites)

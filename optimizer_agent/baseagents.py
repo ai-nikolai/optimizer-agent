@@ -77,7 +77,7 @@ class CoreAgent():
             out_dict.update({ResponseEnum.FEEDBACK_PROMPT.value : messages_feed})
             out_dict.update({ResponseEnum.FEEDBACK_RESPONSE_RAW.value : response_feed})
 
-            prompt_data.update({"feedback" : response_strat})
+            prompt_data.update({"feedback" : response_feed})
 
         return out_dict, prompt_data     
 
