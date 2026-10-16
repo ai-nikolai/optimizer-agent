@@ -8,12 +8,14 @@ immediately after the marker ``=== Evaluation Result ===``.
 What *has* changed:
 
 * Results are now a typed :class:`EvalResult` dataclass (``status``, ``result``,
-  ``scores``, ``stdout``, ``stderr`` and raw bytes) rather than a bare tuple.
+  ``stdout`` and ``stderr``) rather than a bare tuple.
 * Parsing is robust: a missing marker, malformed JSON, or a non-dict result all
   yield a *failing* result (``status == "eval_error"`` / ``{"combined_score":
   -inf}``) instead of raising and aborting the search.
 * The subprocess is always run with a timeout and non-zero exits are captured as
   failures rather than propagating.
+* The raw ``stdout`` / ``stderr`` of the subprocess are carried on the result so
+  the agent can log them for diagnostics.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence
 
 from .utils import (
     extract_eval_results,
@@ -44,6 +46,10 @@ class EvalResult:
 
     status: str = STATUS_OK
     result: Dict[str, Any] = field(default_factory=dict)
+
+    # Raw subprocess capture, kept for diagnostics / logging.
+    stdout: str = ""
+    stderr: str = ""
 
     # Convenient accessors ------------------------------------------------
     @property
@@ -77,7 +83,7 @@ class EvalResult:
 
 def evaluate_script(
     evaluate_path: str,
-    solution_path: Any,
+    solution_path,
     reference_path: Optional[str] = None,
     extra_args: Optional[Sequence[str]] = None,
     *,
@@ -124,8 +130,7 @@ def evaluate_script(
             result={"combined_score": -float("inf"), "status": STATUS_EVAL_ERROR, "error": str(exc)},
         )
 
-    stdout, stderr = proc.stdout, proc.stderr
-    return parse_evaluation(stdout, proc.returncode, stderr)
+    return parse_evaluation(proc.stdout, proc.returncode, proc.stderr)
 
 
 def parse_evaluation(stdout: str, returncode: int = 0, stderr: str = "") -> EvalResult:
@@ -143,11 +148,13 @@ def parse_evaluation(stdout: str, returncode: int = 0, stderr: str = "") -> Eval
                 "returncode": returncode,
                 "stderr": (stderr or "")[:2000],
             },
+            stdout="",
+            stderr=stderr,
         )
 
     result = extract_eval_results(stdout)
     status = classify_result(result)
-    return EvalResult(status=status, result=result)
+    return EvalResult(status=status, result=result, stdout=stdout, stderr=stderr)
 
 
 def parse_evaluation_or_raise(stdout: str) -> Dict[str, Any]:
