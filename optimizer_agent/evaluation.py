@@ -16,6 +16,10 @@ What *has* changed:
   failures rather than propagating.
 * The raw ``stdout`` / ``stderr`` of the subprocess are carried on the result so
   the agent can log them for diagnostics.
+* The ``EvalResult`` accessors understand the different result shapes the
+  evaluators can emit (generic ``runtime``/``runtime_original``, the robust
+  KernelBench booleans, and the CUDA ``evaluate.py`` shape with
+  ``runtime_custom_ms`` / ``runtime_original_ms`` / ``loading_success``).
 """
 
 from __future__ import annotations
@@ -25,15 +29,11 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Sequence
 
-from .utils import (
-    extract_eval_results,
+from optimizer_agent.utils import extract_eval_results
+from optimizer_agent.prompts_v2 import (
     classify_result,
     STATUS_OK,
     STATUS_EVAL_ERROR,
-    STATUS_COMPILE_ERROR,
-    STATUS_RUNTIME_ERROR,
-    STATUS_INCORRECT,
-    STATUS_EMPTY,
 )
 
 # The default timeout (seconds) for a single evaluation.
@@ -63,6 +63,10 @@ class EvalResult:
     @property
     def compiled(self) -> bool:
         return bool(self.result.get("compiled", False))
+
+    @property
+    def loading_success(self) -> bool:
+        return bool(self.result.get("loading_success", True))
 
     @property
     def failure_class(self) -> str:

@@ -1,9 +1,0 @@
-{
-    "_comment": "KernelBench-style prompt configuration for the optimizer agent. The KernelBench prompt builder is TOML-driven (prompts.toml lives in robust_kernelbench/); this JSON only carries the tunable parameters (backend / option / gpu_name / precision). See examples/cuda_engineering/run_kb.sh for usage.",
-    "backend": "cuda",
-    "option": "one_shot",
-    "gpu_name": "H200",
-    "precision": "fp32",
-    "include_hardware": true,
-    "custom_prompt_key": null
-}

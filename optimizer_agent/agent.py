@@ -1,28 +1,23 @@
 """The optimizer agent: an LLM-driven search over code.
 
-``Agent`` is the orchestrator. For a fixed number of *iterations* and *islands*
-it repeatedly:
+``Agent`` is the orchestrator. It is deliberately **agnostic** to the problem
+domain -- it knows nothing about CUDA, kernels, or prompt *content*. It only
+manages the search control flow:
 
-1. selects the best candidates from the previous generation (via a pluggable
+1. select the best candidates from the previous generation (via a pluggable
    selection scheme in :mod:`optimizer_agent.selection`),
-2. builds prompts and calls the LLM to produce improved code
+2. build prompts and call the LLM to produce improved code
    (via :class:`optimizer_agent.generation.GenerationPipeline`),
-3. evaluates the candidate by running the user's ``evaluate.py`` as a subprocess
+3. evaluate the candidate by running the user's ``evaluate.py`` as a subprocess
    (via :mod:`optimizer_agent.evaluation`),
-4. enriches ``prompt_data`` with a pluggable feedback strategy
-   (``--feedback-strategy``),
-5. records everything under ``experiments_dir/``.
+4. enrich ``prompt_data`` with a result-driven feedback strategy
+   (from :mod:`optimizer_agent.prompts_v2`),
+5. record everything under ``experiments_dir/``.
 
-Two prompt styles are supported through the :class:`PromptBuilder` interface:
-
-* **simple** - a JSON config with ``improve`` / ``debug`` sections, each with
-  ``core`` / ``strategy`` / ``feedback`` (this is the original optimizer-agent
-  behaviour and the ``prompt_config.json`` shape).
-* **kernel_bench** - a TOML-driven prompt (``kb_prompt_config`` with
-  ``backend`` / ``option`` / ``gpu_name`` / ``precision``) produced by
-  :class:`~optimizer_agent.prompts.kernel_bench.KernelBenchPromptBuilder`.
-
-Both styles share the exact same control flow; only the builders differ.
+The prompt itself is produced by a single generic
+:class:`~optimizer_agent.prompts_v2.PromptBuilder` configured with a neutral,
+domain-agnostic JSON config (swappable to any wording via ``--prompt-config-file``).
+Feedback comes from the single rule-based strategy in :mod:`optimizer_agent.prompts_v2`.
 """
 
 from __future__ import annotations
@@ -31,11 +26,12 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from optimizer_agent.generation import GenerationPipeline, ResponseEnum
+from optimizer_agent.generation import GenerationPipeline
 from optimizer_agent.llm import LLMServer, FakeLLMServer
-from optimizer_agent.prompts.base import PromptBuilder
-from optimizer_agent.prompts.simple import SimplePromptBuilder
-from optimizer_agent.prompts.kernel_bench import KernelBenchPromptBuilder
+from optimizer_agent.prompts_v2 import (
+    get_feedback_strategy,
+    GenericFeedbackStrategy,
+)
 from optimizer_agent.selection import (
     SingleCandidate,
     CandidatesBestNAll,
@@ -43,17 +39,12 @@ from optimizer_agent.selection import (
     MapElitesCandidates,
 )
 from optimizer_agent.evaluation import evaluate_script, EvalResult
-from optimizer_agent.feedback import FeedbackStrategy, get_feedback_strategy
 
 # File endings for the artefacts logged for every generation.
 _FILE_ENDINGS = {
     "core_response": ".py",
     "core_response_raw": ".txt",
     "core_prompt": ".json",
-    "strategy_response_raw": ".txt",
-    "strategy_prompt": ".json",
-    "feedback_response_raw": ".txt",
-    "feedback_prompt": ".json",
     "scores": ".json",
     "eval_stdout": ".txt",
     "eval_stderr": ".txt",
@@ -68,22 +59,14 @@ class Agent:
         num_debug_iterations: int = 0,
         num_islands: int = 1,
         num_samples: int = 1,
-        # simple-style JSON prompt config (improve / debug sections)
-        improve_prompt_config: Optional[Dict[str, Any]] = None,
-        debug_prompt_config: Optional[Dict[str, Any]] = None,
-        # kernel-bench-style TOML-driven prompt config
-        kb_prompt_config: Optional[Dict[str, Any]] = None,
-        use_kb_prompt: bool = False,
+        # neutral prompt config (swap the strings / file to change wording)
+        prompt_config: Optional[Dict[str, Any]] = None,
         # predecessor selection
         predecessor_selection_method: str = "bestN_last",
         num_map_elites: int = 1,
-        map_elites_method: Optional[str] = None,
         # feedback / sub-agents
-        use_feedback: bool = False,
-        use_debug_feedback: bool = False,
-        use_strategy: bool = False,
         use_debug: bool = False,
-        feedback_strategy: Optional[FeedbackStrategy] = None,
+        feedback_strategy: Optional[Any] = None,
         feedback_strategy_name: Optional[str] = None,
         # model
         model_name: str = "default",
@@ -97,27 +80,17 @@ class Agent:
         self.num_debug_iterations = num_debug_iterations
         self.num_islands = num_islands
         self.num_samples = num_samples
-
-        self.use_kb_prompt = use_kb_prompt
-        self.improve_prompt_config = improve_prompt_config or {}
-        self.debug_prompt_config = debug_prompt_config or {}
-        self.kb_prompt_config = kb_prompt_config or {}
+        self.prompt_config = prompt_config or {}
 
         self.predecessor_selection_method = predecessor_selection_method
         self._predecessor_candidates_class = self._selection_class(predecessor_selection_method)
         self.num_map_elites = num_map_elites
-        self.map_elites_method = map_elites_method
 
-        # Sub-agents / feedback.
-        self.use_strategy = use_strategy
-        self.use_feedback = use_feedback
-        self.use_debug_feedback = use_debug_feedback
         self.use_debug = use_debug
         self.feedback_strategy = (
             feedback_strategy or get_feedback_strategy(feedback_strategy_name or "none")
         )
 
-        # Model.
         self.model_name = model_name
         self.model_url = model_url
         self.model_api_key = model_api_key
@@ -125,22 +98,14 @@ class Agent:
 
         self.server = FakeLLMServer(model_url, model_api_key) if test else LLMServer(model_url, model_api_key)
 
-        # Runtime state.
         self.experiments_dir: Optional[Path] = None
         self.baseline_path: Optional[str] = None
         self.evaluate_path: Optional[str] = None
         self.reference_path: Optional[str] = None
 
-        # Builders (populated in _build).
-        self._kb_core_builder: Optional[KernelBenchPromptBuilder] = None
-        self._core_builder: Optional[PromptBuilder] = None
-        self._strategy_builder: Optional[PromptBuilder] = None
-        self._feedback_builder: Optional[PromptBuilder] = None
-        self._debug_core_builder: Optional[PromptBuilder] = None
-        self._debug_strategy_builder: Optional[PromptBuilder] = None
+        self._core_builder = None
         self._build()
 
-        # Per-island candidate populations.
         self.candidates: Dict[int, Any] = {}
 
     # ------------------------------------------------------------------
@@ -160,38 +125,10 @@ class Agent:
         return mapping[method]
 
     def _build(self):
-        if self.use_kb_prompt:
-            self._kb_core_builder = KernelBenchPromptBuilder(self.kb_prompt_config)
-            return
+        self._core_builder = _make_core_builder(self.prompt_config)
 
-        # simple style
-        self._core_builder = SimplePromptBuilder(self.improve_prompt_config["improve"]["core"])
-        self._strategy_builder = SimplePromptBuilder(self.improve_prompt_config["improve"]["strategy"])
-        self._feedback_builder = SimplePromptBuilder(self.improve_prompt_config["improve"]["feedback"])
-        self._debug_core_builder = SimplePromptBuilder(self.debug_prompt_config["debug"]["core"])
-        self._debug_strategy_builder = SimplePromptBuilder(self.debug_prompt_config["debug"]["strategy"])
-
-    def _make_pipeline(self, *, debug: bool = False) -> GenerationPipeline:
-        if self.use_kb_prompt:
-            return GenerationPipeline(
-                self.server, core_builder=self._kb_core_builder, model_params=self.model_params
-            )
-
-        if debug:
-            return GenerationPipeline(
-                self.server,
-                core_builder=self._debug_core_builder,
-                strategy_builder=self._debug_strategy_builder,
-                model_params=self.model_params,
-            )
-
-        return GenerationPipeline(
-            self.server,
-            core_builder=self._core_builder,
-            strategy_builder=self._strategy_builder if self.use_strategy else None,
-            feedback_builder=self._feedback_builder if self.use_feedback else None,
-            model_params=self.model_params,
-        )
+    def _make_pipeline(self) -> GenerationPipeline:
+        return GenerationPipeline(self.server, core_builder=self._core_builder, model_params=self.model_params)
 
     # ------------------------------------------------------------------
     # public entry point
@@ -281,7 +218,7 @@ class Agent:
         other: Optional[str] = None,
         additional_index: Optional[int] = None,
     ) -> SingleCandidate:
-        pipeline = self._make_pipeline(debug=False)
+        pipeline = self._make_pipeline()
         response_data, prompt_data = pipeline.generate(prompt_data)
 
         success, eval_result, target_file = self._eval_and_save(
@@ -289,8 +226,6 @@ class Agent:
         )
 
         scores = eval_result.result if eval_result else {}
-
-        # Result-driven feedback strategy runs for every candidate.
         self._apply_feedback(prompt_data, scores)
 
         if not success and self.use_debug:
@@ -314,7 +249,7 @@ class Agent:
 
     def _debug_loop(self, iteration_idx, island_idx, response_data, prompt_data, additional_index):
         """Re-generate + re-evaluate a fixed number of times until it succeeds."""
-        debug_pipeline = self._make_pipeline(debug=True)
+        debug_pipeline = self._make_pipeline()
         error_text = self._error_text(response_data)
         prompt_data["error"] = error_text
 
@@ -322,7 +257,6 @@ class Agent:
         target_file = None
         for _ in range(max(1, self.num_debug_iterations)):
             dbg_data, prompt_data = debug_pipeline.generate_debug(prompt_data)
-            # merge debug response files into the logged artefacts
             response_data.update(dbg_data)
             success, eval_result, target_file = self._eval_and_save(
                 iteration_idx, island_idx, response_data, prompt_data, additional_index
@@ -340,12 +274,10 @@ class Agent:
         solutions_dir = self._get_solutions_dir(iteration_idx, island_idx, additional_index=additional_index)
         solutions_dir.mkdir(parents=True, exist_ok=True)
 
-        # Log the generated artefacts (strategy/core prompts + responses + code).
         code = response_data.get("core_response") or response_data.get("core_response_raw") or ""
         self._write_file(solutions_dir, "core_response.py", code)
         self._log_response_data(solutions_dir, response_data)
 
-        # Run the user evaluator as a subprocess and parse its JSON.
         eval_result = evaluate_script(
             self.evaluate_path,
             solutions_dir / "core_response.py",
@@ -366,14 +298,10 @@ class Agent:
     def _apply_feedback(self, prompt_data, scores):
         """Merge result-driven feedback into ``prompt_data``.
 
-        The strategy writes the structured fields (``feedback``, ``error_case``,
-        ``score`` ...) plus ``previous_generation``. The LLM feedback sub-agent,
-        when enabled, adds ``feedback_prompt`` / ``feedback_response_raw`` via the
-        generation pipeline - those are already logged in ``_eval_and_save``.
+        The rule-based strategy writes the structured fields
+        (``feedback``, ``error_case``, ``score``) plus ``previous_generation``.
         """
-        # Forward the current model text as the "previous generation" for KB.
         prompt_data["previous_generation"] = prompt_data.get("new_implementation") or prompt_data.get("core_response") or ""
-        # Remember the previous score so a score-based strategy can compare.
         if "combined_score" in scores:
             prompt_data["prev_score"] = scores["combined_score"]
         enriched = self.feedback_strategy.feed_back(prompt_data, scores)
@@ -385,7 +313,6 @@ class Agent:
         raw = response_data.get("core_response_raw", "")
         if not raw:
             return ""
-        # Prefer a fenced ```...``` block if present.
         idx = raw.find("```")
         if idx != -1:
             end = raw.find("```", idx + 3)
@@ -404,7 +331,7 @@ class Agent:
     def _log_response_data(self, solutions_dir: Path, response_data: Dict[str, Any]):
         for key, value in response_data.items():
             ending = _FILE_ENDINGS.get(key, ".txt")
-            if key in ("core_prompt", "strategy_prompt", "feedback_prompt"):
+            if key in ("core_prompt",):
                 value = json.dumps(value)
             elif key == "scores":
                 value = json.dumps(value)
@@ -436,31 +363,27 @@ class Agent:
         out += f" num_debug_iterations={self.num_debug_iterations}\n"
         out += f" num_islands={self.num_islands}\n"
         out += f" num_samples={self.num_samples}\n"
-        out += f" prompt_config_file={self._prompt_config_label()}\n"
         out += f" predecessor_selection_method={self.predecessor_selection_method}\n"
         out += f" num_map_elites={self.num_map_elites}\n"
-        out += f" map_elites_method={self.map_elites_method}\n"
         out += f" use_debug={self.use_debug}\n"
-        out += f" use_strategy={self.use_strategy}\n"
-        out += f" use_feedback={self.use_feedback}\n"
         out += f" feedback_strategy={type(self.feedback_strategy).__name__}\n"
-        out += f" use_kb_prompt={self.use_kb_prompt}\n"
         if self.experiments_dir:
             out += f" experiments_dir={self.experiments_dir}\n"
         return out
 
-    def _prompt_config_label(self):
-        if self.use_kb_prompt:
-            return f"kernel_bench ({self.kb_prompt_config.get('backend', 'cuda')})"
-        if isinstance(self.improve_prompt_config, dict) and self.improve_prompt_config.get("path"):
-            return self.improve_prompt_config["path"]
-        if isinstance(self.improve_prompt_config, dict):
-            return "simple (inline)"
-        return ""
+
+def _make_core_builder(prompt_config: Dict[str, Any]):
+    """Build the generic core ``PromptBuilder`` from a config.
+
+    The ``prompt_config`` may be either a full neutral config dict (the
+    ``{"system", "order", "prompts"}`` shape understood by
+    :class:`~optimizer_agent.prompts_v2.PromptBuilder`), or ``{}``` for the
+    bundled default.
+    """
+    from optimizer_agent.prompts_v2 import PromptBuilder
+    return PromptBuilder(prompt_config)
 
 
 if __name__ == "__main__":
-    from optimizer_agent.prompt_config import PromptConfig
-
     agent = Agent(test=True)
     agent.run(baseline=None, evaluate=None)
