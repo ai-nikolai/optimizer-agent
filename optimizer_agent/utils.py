@@ -1,91 +1,126 @@
-import requests
+"""
+Extraction helpers shared across the agent.
+
+This module is deliberately dependency-light (no torch) so that it can be
+imported from anywhere - including from the ``evaluation`` module, which only
+imports torch lazily.
+"""
+
+from __future__ import annotations
+
 import json
-import argparse
+from typing import Any, Dict
 
 
-def extract_final_code_response(response):
-    """Extract the final code response from a LLM response string.
+def extract_final_code_response(response: str) -> str:
+    """Pull the final fenced code block out of an LLM response string.
 
     Args:
-        response (str): The full response from the LLM.
+        response: The full raw response from the LLM.
 
     Returns:
-        str: The extracted code block, or the original response if no code block is found.
+        The extracted code block, or the original response if no code block is
+        found (so we never fail to return *something* useful).
     """
-    # Look for the start of a code block, usually marked by triple backticks
+    if not isinstance(response, str):
+        return response
+
     start_marker = "```"
     code_start = response.find(start_marker)
-
-    # If no code block is found, return the original response
     if code_start == -1:
         return response
 
-    # Find the end of the code block
-    # The end marker is just the triple backticks, not including the language identifier
     code_end = response.find(start_marker, code_start + len(start_marker))
-
-    # If no closing backticks are found, return from the start (including language identifier if present) to the end
     if code_end == -1:
         return response[code_start + len(start_marker):]
 
-    # Otherwise, extract the code between the two markers,
-    # skipping any language identifier that may follow the opening backticks
     code_content_start = code_start + len(start_marker)
-    # Find the position after any language identifier (e.g., "python", "c++", etc.)
-    # by looking for the first newline after the opening backticks
     first_newline = response.find("\n", code_content_start)
     if first_newline != -1 and first_newline < code_end:
         code_content_start = first_newline + 1
     return response[code_content_start:code_end]
 
 
-def extract_eval_results(stdout):
-    # Extract the final JSON output after EVAL_MARKER
-    default_eval_results = {'combined_score': -float("inf")}
+# The default evaluator exit status codes (kept in sync with evaluate.py).
+STATUS_OK = "ok"
+STATUS_COMPILE_ERROR = "compile_error"
+STATUS_RUNTIME_ERROR = "runtime_error"
+STATUS_INCORRECT = "incorrect"
+STATUS_EMPTY = "empty"
+STATUS_EVAL_ERROR = "eval_error"
+
+
+def classify_result(result: Dict[str, Any]) -> str:
+    """Derive a coarse, score-independent failure class from an eval result.
+
+    The KernelBench style iteration relies on knowing *why* a candidate failed
+    (compile / runtime / correctness) so that it can craft targeted feedback.
+    This mirrors the stage-level booleans in :class:`evaluation.EvalResult`.
+
+    Returns one of the ``STATUS_*`` constants above.
+    """
+    if not result:
+        return STATUS_EVAL_ERROR
+
+    if result.get("main_output") is not None or result.get("main_error"):
+        # An exception / traceback was recorded somewhere.
+        status = result.get("status")
+        if status:
+            return status
+
+    # Fallback to stage booleans.
+    if not result.get("correctness", False) and not result.get("compiled", False):
+        # Not even compilable -> distinguish a compile syntax error from a
+        # "error building extension" runtime error.
+        compile_status = result.get("compile_status")
+        if compile_status in (STATUS_COMPILE_ERROR, STATUS_RUNTIME_ERROR):
+            return compile_status
+        return STATUS_COMPILE_ERROR
+
+    if not result.get("compiled", False):
+        return STATUS_COMPILE_ERROR
+
+    if not result.get("runtime_success", True) or result.get("status") == STATUS_RUNTIME_ERROR:
+        return STATUS_RUNTIME_ERROR
+
+    if not result.get("correctness", False):
+        return STATUS_INCORRECT
+
+    return STATUS_OK
+
+
+def extract_eval_results(stdout: str) -> Dict[str, Any]:
+    """Parse the JSON object printed by an evaluator subprocess.
+
+    The convention is that the evaluator prints a marker line
+    ``=== Evaluation Result ===`` followed immediately by a JSON object.
+    Everything between the first ``{`` and the last ``}`` after the marker is
+    treated as the result. Missing the marker (or any JSON) yields a failing
+    ``{"combined_score": -inf}`` record instead of raising.
+    """
     marker = "=== Evaluation Result ==="
-    if marker in stdout:
-        # Get everything after the marker
-        evaluation_output = stdout.split(marker)[-1].strip()
+    default_eval_results = {"combined_score": -float("inf")}
 
-        # Try to parse the JSON from the evaluation output
-        try:
-            # Find the first JSON object in the output
-            # This handles cases where there might be additional text
-            start_idx = evaluation_output.find('{')
-            end_idx = evaluation_output.rfind('}') + 1
-
-            if start_idx != -1 and end_idx != 0:
-                json_str = evaluation_output[start_idx:end_idx]
-                evaluation_result = json.loads(json_str)
-                print(f"Info: Got eval results: {evaluation_result}.")
-                return evaluation_result
-            else:
-                print(f"Warning: No JSON found after EVAL_MARKER in stdout")
-                print(f"Evaluation output: {evaluation_output[:500]}...")
-                return default_eval_results
-        except json.JSONDecodeError as e:
-            print(f"Warning: Failed to parse JSON from evaluation output: {e}")
-            print(f"Raw output after marker: {evaluation_output[:500]}...")
-            return default_eval_results
-    else:
+    if marker not in stdout:
         print(f"Warning: EVAL_MARKER '{marker}' not found in stdout")
         print(f"Stdout: {stdout[:500]}...")
-        if stderr:
-            print(f"Stderr: {stderr[:500]}...")
         return default_eval_results
 
+    evaluation_output = stdout.split(marker)[-1].strip()
+    try:
+        result = json.loads(evaluation_output)
+        if isinstance(result, dict):
+            return result
+    except (json.JSONDecodeError, ValueError):
+        start_idx = evaluation_output.find("{")
+        end_idx = evaluation_output.rfind("}") + 1
+        if start_idx != -1 and end_idx != 0:
+            json_str = evaluation_output[start_idx:end_idx]
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
 
-
-if __name__=="__main__":
-    out_dict = {'combined_score':0.1}
-    
-    eval_results = f"""random string\nand another
-=== Evaluation Result ===
-{json.dumps(out_dict)}
-"""
-    print(eval_results)
-    results = extract_eval_results(eval_results)
-
-    print(results)
-
-    print(results==out_dict)
+    print(f"Warning: No JSON found after EVAL_MARKER in stdout")
+    print(f"Evaluation output: {evaluation_output[:500]}...")
+    return default_eval_results
