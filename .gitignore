@@ -12,3 +12,8 @@ optimizer_agent_ai.py
 agent_strategies.py
 
 dist/
+
+CURRENT_GOAL.md
+CURRENT_PLAN.md
+
+.mini/last_session.json
