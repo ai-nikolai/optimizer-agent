@@ -1,8 +1,14 @@
-"""Extraction helpers shared across the agent.
+"""Tiny parsing helpers.
 
-This module is deliberately dependency-light (no torch) so it can be imported
-anywhere. Scoring-classification rules live in :mod:`optimizer_agent.prompts_v2`
-(now that the package is generic rather than CUDA-specific).
+Everything here is dependency-free (no torch / numpy). Two jobs:
+
+* pull the fenced code block out of an LLM response,
+* pull the result JSON out of an evaluator's stdout.
+
+Both helpers fail *soft*: on anything they can't parse they return a sentinel
+(the ``MISSING`` dict carrying ``__unparsed__: True``) instead of raising, so
+the search loop never crashes on a malformed response or evaluator log line.
+The caller decides what "unparsed" means.
 """
 
 from __future__ import annotations
@@ -10,73 +16,76 @@ from __future__ import annotations
 import json
 from typing import Any, Dict
 
+from optimizer_agent import EVAL_MARKER
+
+# The single file ending we write the model's new code to.
+CORE_RESPONSE = "core_response"
+
+# Sentinel returned when we can't parse a result at all. Carrying an
+# `__unparsed__` flag lets the caller tell "evaluator ran, bad result"
+# apart from "we couldn't get a result at all".
+MISSING: Dict[str, Any] = {"__unparsed__": True}
+
 
 def extract_final_code_response(response: str) -> str:
-    """Pull the final fenced ```code``` block out of an LLM response string.
+    """Return the ```code``` block from an LLM response, or the whole thing.
 
-    Returns the extracted code block, or the original response if no code block
-    is found (so we never fail to return *something* useful).
+    If there is no code block we simply return the response unchanged, so the
+    loop keeps working with whatever the model produced.
     """
     if not isinstance(response, str):
+        return ""
+    start = response.find("```")
+    if start == -1:
         return response
-
-    start_marker = "```"
-    code_start = response.find(start_marker)
-    if code_start == -1:
-        return response
-
-    code_end = response.find(start_marker, code_start + len(start_marker))
-    if code_end == -1:
-        return response[code_start + len(start_marker) :]
-
-    code_content_start = code_start + len(start_marker)
-    first_newline = response.find("\n", code_content_start)
-    if first_newline != -1 and first_newline < code_end:
-        code_content_start = first_newline + 1
-    return response[code_content_start:code_end]
+    end = response.find("```", start + 3)
+    if end == -1:
+        return response[start + 3:].strip()
+    code = response[start + 3:end]
+    first_newline = code.find("\n")
+    if first_newline != -1:
+        code = code[first_newline + 1:]
+    return code.strip()
 
 
 def extract_eval_results(stdout: str) -> Dict[str, Any]:
-    """Parse the JSON object printed by an evaluator subprocess.
+    """Extract the JSON printed by ``evaluate.py`` after the marker.
 
-    The convention is that the evaluator prints a marker line
-    ``=== Evaluation Result ===`` followed immediately by a JSON object.
-    Everything between the first ``{`` and the last ``}``` after the marker is
-    treated as the result. Missing the marker (or any JSON) yields a failing
-    ``{"combined_score": -inf}`` record instead of raising.
+    The convention: a line ``=== Evaluation Result ===`` followed immediately by
+    one JSON object. We search for the first ``{`` and the last ``}``` after the
+    marker. Anything missing (no marker, malformed JSON) yields the empty
+    ``MISSING`` sentinel -- a failing result, never a crash.
     """
-    marker = "=== Evaluation Result ==="
-    default_eval_results = {"combined_score": -float("inf")}
+    if not stdout:
+        return MISSING
 
-    if marker not in stdout:
-        print(f"Warning: EVAL_MARKER '{marker}' not found in stdout")
-        print(f"Stdout: {stdout[:500]}...")
-        return default_eval_results
+    parts = stdout.split(EVAL_MARKER)
+    if not parts:
+        return MISSING
 
-    evaluation_output = stdout.split(marker)[-1].strip()
+    payload = parts[-1].strip()
+    start = payload.find("{")
+    end = payload.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return MISSING
     try:
-        result = json.loads(evaluation_output)
-        if isinstance(result, dict):
-            return result
-    except (json.JSONDecodeError, ValueError):
-        start_idx = evaluation_output.find("{")
-        end_idx = evaluation_output.rfind("}") + 1
-        if start_idx != -1 and end_idx != 0:
-            json_str = evaluation_output[start_idx:end_idx]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError:
-                pass
-
-    print(f"Warning: No JSON found after EVAL_MARKER in stdout")
-    print(f"Evaluation output: {evaluation_output[:500]}...")
-    return default_eval_results
+        result = json.loads(payload[start:end + 1])
+    except json.JSONDecodeError:
+        return MISSING
+    return result if isinstance(result, dict) else MISSING
 
 
-# The default evaluator exit status codes (kept in sync with prompts_v2).
-STATUS_OK = "ok"
-STATUS_COMPILE_ERROR = "compile_error"
-STATUS_RUNTIME_ERROR = "runtime_error"
-STATUS_INCORRECT = "incorrect"
-STATUS_EMPTY = "empty"
-STATUS_EVAL_ERROR = "eval_error"
+def score_of(result: Dict[str, Any], *, default: float = -float("inf")) -> float:
+    """The scalar the search compares. ``combined_score`` if present, else inf-neg."""
+    value = result.get("combined_score", default)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def write(path, content: str) -> str:
+    """Write ``content`` to ``path`` (as text) and return ``path``."""
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(content)
+    return str(path)

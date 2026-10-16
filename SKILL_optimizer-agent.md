@@ -25,15 +25,15 @@ Author: Nikolai Rozanov. Python >= 3.9. Runtime deps: `requests`,
 - `robust_kernelbench/` — the KB asset repo; used only as a *reference* for the feedback rules. The package **never imports** it (verified).
 
 ## Core modules (`optimizer_agent/`)
-- `agent.py::Agent` — the **orchestrator**. Runs iterations -> islands -> generations; wires a prompt builder + LLM + subprocess evaluation + result-driven feedback + logging. It is **agnostic to prompt content** (content lives in a swappable JSON config) and **agnostic to the problem domain** (only the evaluator contract matters). Knows the control flow: select predecessors, build prompts, call the model, evaluate, enrich prompt_data with feedback, record artifacts under `experiments_dir/`.
-- `generation.py::GenerationPipeline` — runs a single **core** LLM stage built from a generic `PromptBuilder`; also `generate_debug` for the debug loop. Extracts the final ```-fenced code block from a core response.
-- `prompts_v2.py` — the **single rules + generic builder module** (see below). This is where all feedback rules and the prompt rendering live; it does **not** import `robust_kernelbench`.
+- `agent.py::Agent` — the **orchestrator**. Runs iterations -> islands -> generations; wires a prompt builder + LLM + subprocess evaluation + result-driven feedback + logging. It is **agnostic to prompt content** (content lives in a swappable JSON config) and **agnostic to the problem domain** (only the evaluator contract matters). Control flow: select predecessors -> build prompts -> model -> evaluate -> enrich `prompt_data` with feedback -> record artifacts under `experiments_dir/`. A **debug loop** regenerates a failed candidate a few times until it runs.
+- `generation.py::GenerationPipeline` — runs a single **core** LLM stage built from a generic `PromptBuilder`; `generate()` pulls the final ```-fenced code block from a core response. (The debug loop just calls `generate()` again.)
+- `prompts.py` — the **rules + generic builder module** (see below). It does **not** import `robust_kernelbench`.
 - `evaluation.py` — `evaluate_script()` runs a user-supplied `evaluate.py` as a **subprocess** with timeout; `EvalResult` dataclass (`status`, `result`, `stdout`, `stderr`); `parse_evaluation` robustly extracts the JSON after the `=== Evaluation Result ===` marker.
 - `selection.py` — candidate populations: `CandidatesBestNAll`, `CandidatesBestNLast`, `MapElitesCandidates` (clusters generated code via `textdistance` Jaccard, threshold 0.2).
 - `llm.py` — `BaseServer`/`LLMServer` (calls `.../v1/chat/completions`, lazy `requests`), `FakeLLMServer` for `--test` (never touches the network, returns a random string).
-- `utils.py` — `extract_final_code_response` (pulls out ``` fenced code ```), `extract_eval_results` (parses JSON after marker), `STATUS_*` classification constants.
+- `utils.py` — `extract_final_code_response` (pulls out ``` fenced code ```), `extract_eval_results` (parses JSON after marker), `score_of`.
 - `cli.py` — argparse → `optimizer-agent ...` entry point (see Run below).
-- `tests/test_units.py` — 19 GPU-free unit tests (prompt building, `classify_result`, `compute_score`, all feedback strategies, evaluation parsing).
+- `tests/test_units.py` — 26 GPU-free unit tests (prompt building, `classify_result`, `compute_score`, all feedback strategies, evaluation parsing).
 
 ## Optimization loop (`Agent.run`)
 ```
@@ -45,32 +45,27 @@ for iteration:
     1. GenerationPipeline.generate() -> new ModelNew code (single core stage)
     2. subprocess: python evaluate.py --solution <code> [--reference <ref>]
     3. parse result -> scores; update population
-    4. apply result-driven FeedbackStrategy(prompt_data, result)  (single "v2" rules path)
-    5. on failure + use_debug: debug loop (num_debug_iterations) planning around the error
+    4. apply result-driven FeedbackStrategy(prompt_data, result) (single "v2" rules path)
+    5. on failure + use_debug: debug loop (num_debug_iterations) regenerating until it runs
 predecessor_selection_method: bestN_last | bestN_all | map_elites
 ```
 Key params: `num_iterations, num_islands, num_samples, num_debug_iterations,
 predecessor_selection_method, num_map_elites, use_debug, feedback_strategy_name,
 prompt_config`.
 
-## The generic rules module (`prompts_v2.py`)
+## The generic rules module (`prompts.py`)
 Everything here is domain-agnostic and does **not** import `robust_kernelbench`.
 
-* `classify_result(result)` — score-independent failure class, mirroring KB's
-  per-stage checks: compile -> runtime/load -> correctness -> improve. Returns
-  `empty | eval_error | compile_error | runtime_error | incorrect | improve`.
-  Works with either the generic result shape (`runtime`/`runtime_original`) or
-  the CUDA evaluator's shape (`runtime_custom_ms`/`runtime_original_ms`,
-  `loading_success`).
-* `extract_error_message(result)` — best-effort error/traceback text.
-* `compute_score(result)` — a scalar reward: an explicit `combined_score` field
-  wins; else the speed-up factor `runtime_original / runtime` (+ inf / 0.0 edge
-  cases).
-* `GenericFeedbackStrategy` — the single rules path. Turns a fresh `result` dict
-  into a metadata dict (`error_case`, `error_message`, `score`,
-  `previous_generation`, `prev_score`, plus `metadata.*`) and a short
-  `feedback` string; the agent merges it back into `prompt_data`. `NoFeedback`
-  produces nothing. Registry: `none` / `v2`, selected via
+* `classify_result(result)` — score-independent failure class. Works with either
+  the generic result shape (`runtime`/`runtime_original`) or the CUDA evaluator's
+  shape (`runtime_custom_ms`/`runtime_original_ms`, `loading_success`). Returns
+  `empty | eval_error | incorrect | improve`.
+* `compute_score(result)` — a scalar reward: an explicit `combined_score` field.
+* `GenericFeedbackStrategy` — the single rules path. Reads `new_implementation`
+  from `prompt_data`, turns a fresh `result` dict into a metadata dict
+  (`error_case`, `score`, `previous_generation`, `prev_score`, plus `metadata.*`)
+  and a short `feedback` string; the agent merges it back into `prompt_data`.
+  `NoFeedback` produces nothing. Registry: `none` / `v2`, selected via
   `--feedback-strategy` (default `v2`).
 * `PromptBuilder` — a tiny, config-driven template renderer. A config is the
   shape `{"system": {order, prompts}, "user": {order, prompts}}`; each slot is a
@@ -83,7 +78,7 @@ Everything here is domain-agnostic and does **not** import `robust_kernelbench`.
   Signature: `python evaluate.py --solution SOL [--reference REF]`.
 - It must print a line `=== Evaluation Result ===` followed by `json.dumps({...})`.
 - `utils.extract_eval_results` reads the JSON between the first `{` and last `}`
-  after the marker. Missing marker / malformed JSON → `{'combined_score': -inf}`
+  after the marker. Missing marker / malformed JSON → `MISSING` sentinel
   (a fail, not a crash).
 - `evaluate_script` always runs the subprocess with a timeout; non-zero exits are
   captured as failures (`eval_error`) rather than propagating. Raw stdout/stderr
@@ -91,7 +86,7 @@ Everything here is domain-agnostic and does **not** import `robust_kernelbench`.
 - Scoring is **domain-specific** and decided by the evaluator. Example CUDA scorer
   = `runtime_original_ms − runtime_custom_ms` (higher = faster). The agent stays
   agnostic by classifying results with `classify_result` and scoring with
-  `compute_score` in `prompts_v2.py`.
+  `compute_score` in `prompts.py`.
 
 ### Reward-hacking defenses (`examples/cuda_engineering/evaluate.py`)
 Against: Hack#1 (work on other streams → force `synchronize`), Hack#2 (thread
@@ -115,6 +110,7 @@ optimizer-agent --baseline examples/test_example/baseline.py \
 Start an OpenAI-compatible server first (SGLang or vLLM). `--test` uses
 `FakeLLMServer` and never touches the network; it still needs real
 `--baseline`/`--evaluate` files (it reads the baseline and calls the evaluator).
+`--use-debug` is the friendly boolean form of `--num-debug-iterations` (sets it to 1).
 Known caveats: map-elites clustering is simplistic (string-based
 `textdistance` Jaccard, hardcoded threshold 0.2, no feature vector);
 `agent_strategies.py` is a non-functional stub; `FakeLLMServer` returns random

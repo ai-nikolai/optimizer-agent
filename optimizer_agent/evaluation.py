@@ -1,166 +1,99 @@
-"""Robust evaluation.
+"""Run the user's evaluator as a subprocess and parse its output.
 
-The optimizer agent evaluates every candidate by running the user-supplied
-``evaluate.py`` as a subprocess. That contract is unchanged from the original:
-the evaluator takes ``--solution`` / ``--reference`` and prints a JSON object
-immediately after the marker ``=== Evaluation Result ===``.
+This module knows nothing about CUDA, kernels, speed-up factors, or correctness.
+It only knows one thing: an evaluator is a script that prints a JSON object
+after the ``=== Evaluation Result ===`` marker. Everything else -- what that
+JSON means, how to turn it into a score -- is the user's business.
 
-What *has* changed:
-
-* Results are now a typed :class:`EvalResult` dataclass (``status``, ``result``,
-  ``stdout`` and ``stderr``) rather than a bare tuple.
-* Parsing is robust: a missing marker, malformed JSON, or a non-dict result all
-  yield a *failing* result (``status == "eval_error"`` / ``{"combined_score":
-  -inf}``) instead of raising and aborting the search.
-* The subprocess is always run with a timeout and non-zero exits are captured as
-  failures rather than propagating.
-* The raw ``stdout`` / ``stderr`` of the subprocess are carried on the result so
-  the agent can log them for diagnostics.
-* The ``EvalResult`` accessors understand the different result shapes the
-  evaluators can emit (generic ``runtime``/``runtime_original``, the robust
-  KernelBench booleans, and the CUDA ``evaluate.py`` shape with
-  ``runtime_custom_ms`` / ``runtime_original_ms`` / ``loading_success``).
+The :class:`EvalResult` simply carries back whatever the evaluator emitted.
+The :class:`FeedbackStrategy` (see ``prompts.py``) is responsible for reading
+that dict and deciding how to talk to the model.
 """
 
 from __future__ import annotations
 
-import json
 import subprocess
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Sequence
 
-from optimizer_agent.utils import extract_eval_results
-from optimizer_agent.prompts_v2 import (
-    classify_result,
-    STATUS_OK,
-    STATUS_EVAL_ERROR,
-)
+from optimizer_agent.utils import MISSING, extract_eval_results
 
-# The default timeout (seconds) for a single evaluation.
-DEFAULT_EVAL_TIMEOUT = 600
+# Per-evaluation timeout (seconds). Kept generous: a slow evaluator should still
+# get enough time, but a hung one must not strand the search.
+DEFAULT_TIMEOUT = 600
 
 
 @dataclass
 class EvalResult:
-    """A fully-typed outcome of evaluating one candidate."""
+    """The outcome of evaluating a single candidate.
 
-    status: str = STATUS_OK
+    ``result`` holds the raw JSON the evaluator emitted. ``status`` is an
+    internal tag (``"ok"`` when the evaluator ran and produced a parseable
+    result, ``"eval_error"`` when it crashed / timed out / produced nothing
+    useful). ``stdout`` / ``stderr`` carry the raw capture for logging.
+    """
+
+    status: str = "ok"
     result: Dict[str, Any] = field(default_factory=dict)
-
-    # Raw subprocess capture, kept for diagnostics / logging.
     stdout: str = ""
     stderr: str = ""
 
-    # Convenient accessors ------------------------------------------------
     @property
-    def combined_score(self) -> float:
-        return self.result.get("combined_score", -float("inf"))
-
-    @property
-    def correctness(self) -> bool:
-        return bool(self.result.get("correctness", False))
-
-    @property
-    def compiled(self) -> bool:
-        return bool(self.result.get("compiled", False))
-
-    @property
-    def loading_success(self) -> bool:
-        return bool(self.result.get("loading_success", True))
-
-    @property
-    def failure_class(self) -> str:
-        """Score-independent class of *why* this candidate failed."""
-        if self.status != STATUS_OK:
-            return self.status
-        return classify_result(self.result)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "status": self.status,
-            "result": self.result,
-            "combined_score": self.combined_score,
-            "correctness": self.correctness,
-            "compiled": self.compiled,
-        }
+    def score(self) -> float:
+        """The scalar the search compares. ``combined_score`` if present, else -inf."""
+        from optimizer_agent.utils import score_of
+        return score_of(self.result)
 
 
 def evaluate_script(
     evaluate_path: str,
-    solution_path,
+    solution_path: str,
     reference_path: Optional[str] = None,
     extra_args: Optional[Sequence[str]] = None,
     *,
-    timeout: int = DEFAULT_EVAL_TIMEOUT,
+    timeout: int = DEFAULT_TIMEOUT,
 ) -> EvalResult:
-    """Run ``evaluate.py`` on a single candidate and parse its output.
+    """Run ``evaluate.py --solution ... [--reference ...]`` and parse its output.
 
-    Args:
-        evaluate_path: path to the user's evaluator.
-        solution_path: path (or string) to the candidate solution.
-        reference_path: optional path to the reference solution.
-        extra_args: any additional CLI arguments for the evaluator.
-        timeout: per-evaluation timeout in seconds.
-
-    Returns:
-        A :class:`EvalResult`. Failures to run or to parse yield a failing
-        result rather than an exception.
+    A non-zero exit code, a timeout, or any exception all collapse to a single
+    failing result (``status == "eval_error"`` with ``combined_score: -inf``)
+    rather than aborting the search.
     """
-    command = [
-        "python",
-        evaluate_path,
-        "--solution", str(solution_path),
-    ]
+    command = ["python", evaluate_path, "--solution", str(solution_path)]
     if reference_path:
         command += ["--reference", str(reference_path)]
     if extra_args:
         command += list(extra_args)
 
     try:
-        proc = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
-        return EvalResult(
-            status=STATUS_EVAL_ERROR,
-            result={"combined_score": -float("inf"), "status": STATUS_EVAL_ERROR, "timeout": True},
-        )
-    except Exception as exc:
-        return EvalResult(
-            status=STATUS_EVAL_ERROR,
-            result={"combined_score": -float("inf"), "status": STATUS_EVAL_ERROR, "error": str(exc)},
-        )
+        return _eval_error(status="eval_error", stderr="<timed out>")
+    except Exception as exc:  # pragma: no cover - defensive
+        return _eval_error(status="eval_error", stderr=f"<{exc}>")
 
     return parse_evaluation(proc.stdout, proc.returncode, proc.stderr)
 
 
 def parse_evaluation(stdout: str, returncode: int = 0, stderr: str = "") -> EvalResult:
-    """Parse evaluator ``stdout`` into a typed :class:`EvalResult`.
+    """Turn raw evaluator output into an :class:`EvalResult`.
 
-    A non-zero ``returncode`` marks the result as an evaluation error. The JSON
-    result is parsed robustly (see :func:`utils.extract_eval_results`).
+    A non-zero return code is treated as an evaluation error. A zero exit code
+    is parsed for its result JSON -- and if the JSON couldn't be parsed at all
+    (the ``MISSING`` sentinel) that is also treated as an evaluation error, so a
+    broken evaluator can never masquerade as a working one.
     """
-    if returncode != 0:
-        return EvalResult(
-            status=STATUS_EVAL_ERROR,
-            result={
-                "combined_score": -float("inf"),
-                "status": STATUS_EVAL_ERROR,
-                "returncode": returncode,
-                "stderr": (stderr or "")[:2000],
-            },
-            stdout="",
-            stderr=stderr,
-        )
-
     result = extract_eval_results(stdout)
-    status = classify_result(result)
-    return EvalResult(status=status, result=result, stdout=stdout, stderr=stderr)
+    if not result or result.get("__unparsed__"):
+        return _eval_error(status="eval_error", stderr=stderr)
+    return EvalResult(status="ok", result=result, stdout=stdout, stderr=stderr or "")
+
+
+def _eval_error(*, status: str, stderr: str = "") -> EvalResult:
+    """A failing result: no usable score, raw stderr for diagnostics."""
+    return EvalResult(status=status, result={"combined_score": -float("inf")}, stderr=stderr)
 
 
 def parse_evaluation_or_raise(stdout: str) -> Dict[str, Any]:
-    """Convenience: just the parsed dict (used by tests and simple callers)."""
+    """Convenience: just the parsed result dict (used by tests and simple callers)."""
     return extract_eval_results(stdout)
