@@ -19,9 +19,11 @@ To stay self-contained (the agent package should not import from
 
 * ``kb_prompts/prompts.toml`` drives the component ordering and the backend /
   option / precision / hardware templates (mirrors the KB config exactly).
-* The example source files are read by relative path from the repo root, so a
-  ``kb_examples_dir`` of ``"robust_kernelbench/kb_prompts"`` (the default) works
-  when the agent runs from the repo root.
+* The example source files and the ``hardware/gpu_specs.py`` module live inside
+  the checked-out ``robust_kernelbench`` repo. Their exact depth varies between
+  checkouts (sometimes single-nested, sometimes double-nested under the
+  package dir), so every asset is located with a small, robust search helper
+  rather than a single hard-coded path.
 
 This intentionally keeps the prompt *construction* here, while the heavy GPU
 kernel loading / evaluation lives in ``robust_kernelbench`` (via subprocess).
@@ -37,9 +39,28 @@ from .base import PromptBuilder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# Examples live in the (untracked) robust_kernelbench repo checked out next to
-# optimizer_agent.
-DEFAULT_KB_EXAMPLES_DIR = os.path.join("..", "robust_kernelbench", "kb_prompts")
+# ``HERE`` is ``<repo>/optimizer_agent/prompts/``. Two levels up is the repo
+# root.
+REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+
+# Candidate locations for the ``kb_prompts`` directory. Different checkouts nest
+# it either directly under the ``robust_kernelbench`` checkout (single-nested)
+# or inside its own package directory (double-nested). We try the most common
+# orderings first.
+KB_PROMPTS_CANDIDATES: List[str] = [
+    os.path.join(REPO_ROOT, "robust_kernelbench", "robust_kernelbench", "kb_prompts"),
+    os.path.join(REPO_ROOT, "robust_kernelbench", "kb_prompts"),
+    os.path.abspath(os.path.join(HERE, "..", "..", "robust_kernelbench", "kb_prompts")),
+    os.path.abspath(os.path.join(HERE, "..", "..", "..", "robust_kernelbench", "kb_prompts")),
+]
+
+# Example paths in ``prompts.toml`` are stored relative to ``repo_root/robust_kernelbench``
+# (e.g. ``robust_kernelbench/kb_prompts/model_ex_add.py``). Resolve against the
+# checked-out location, trying a couple of sensible orderings.
+EXAMPLE_PATH_BASES: List[str] = [
+    os.path.join(REPO_ROOT, "robust_kernelbench"),
+    REPO_ROOT,
+]
 
 
 def _read_file(path: str) -> str:
@@ -50,18 +71,42 @@ def _read_file(path: str) -> str:
         return ""
 
 
-def _load_toml() -> Dict[str, Any]:
-    """Load the KernelBench prompts.toml from the robust_kernelbench repo."""
+def _find_kb_prompts_dir() -> Optional[str]:
+    """Return the first existing ``kb_prompts`` directory, or ``None``."""
+    for cand in KB_PROMPTS_CANDIDATES:
+        if os.path.isfile(os.path.join(cand, "prompts.toml")):
+            return cand
+    return None
+
+
+def _load_toml(kb_prompts_dir: str) -> Dict[str, Any]:
+    """Load the KernelBench ``prompts.toml`` from the checked-out repo."""
     import tomli
 
-    toml_path = os.path.abspath(os.path.join(HERE, "..", "robust_kernelbench", "kb_prompts", "prompts.toml"))
+    toml_path = os.path.join(kb_prompts_dir, "prompts.toml")
     with open(toml_path, "rb") as file:
         return tomli.load(file)
 
 
-def _load_gpu_specs(examples_dir: str) -> Dict[str, Any]:
+def _resolve_example(rel_path: str) -> str:
+    """Read a toml-referenced example file, tolerant of nesting differences.
+
+    ``rel_path`` is stored in ``prompts.toml`` relative to ``repo_root/robust_kernelbench``
+    (e.g. ``robust_kernelbench/kb_prompts/model_new_ex_add.py``). Because some
+    checkouts double-nest the package, we try a small list of base directories
+    and return an empty string if none resolve (so a missing example simply
+    disappears from the prompt instead of crashing the whole run).
+    """
+    for base in EXAMPLE_PATH_BASES:
+        content = _read_file(os.path.normpath(os.path.join(base, rel_path)))
+        if content:
+            return content
+    return ""
+
+
+def _load_gpu_specs(kb_prompts_dir: str) -> Dict[str, Any]:
     """Load GPU_SPEC_INFO / GPU_DEFINITIONS / GPU_BEST_PRACTICES via runpy."""
-    gpu_py = os.path.join(examples_dir, "hardware", "gpu_specs.py")
+    gpu_py = os.path.join(kb_prompts_dir, "hardware", "gpu_specs.py")
     mod = runpy.run_path(gpu_py)
     return {
         "spec_info": mod.get("GPU_SPEC_INFO", {}),
@@ -81,10 +126,22 @@ class KernelBenchPromptBuilder(PromptBuilder):
         self.include_hardware = cfg.get("include_hardware", True)
         self.gpu_name = cfg.get("gpu_name", "H200")
         self.custom_prompt_key = cfg.get("custom_prompt_key")
-        self.examples_dir = cfg.get("kb_examples_dir", DEFAULT_KB_EXAMPLES_DIR)
+        self.kb_examples_dir = cfg.get("kb_examples_dir")
 
-        self._toml = _load_toml()
-        self._gpu = _load_gpu_specs(self.examples_dir) if self.include_hardware else None
+        self._kb_prompts_dir = (
+            os.path.abspath(self.kb_examples_dir)
+            if self.kb_examples_dir
+            else _find_kb_prompts_dir()
+        )
+        if self._kb_prompts_dir is None:
+            raise FileNotFoundError(
+                "Could not locate the KernelBench kb_prompts directory. Set "
+                "'kb_examples_dir' in the prompt config or check out the "
+                "'robust_kernelbench' repo next to optimizer_agent."
+            )
+
+        self._toml = _load_toml(self._kb_prompts_dir)
+        self._gpu = _load_gpu_specs(self._kb_prompts_dir) if self.include_hardware else None
 
     # -- Public API -------------------------------------------------------
     def build_messages(self, prompt_data: Dict[str, Any]) -> List[Dict[str, str]]:
@@ -127,8 +184,10 @@ class KernelBenchPromptBuilder(PromptBuilder):
             if override:
                 components = list(override)
 
-        if self.include_hardware and "architecture" not in components:
-            components.append("architecture")
+        # Ensure the reference-architecture block is present (rendered as
+        # ``arch_block`` below).
+        if self.include_hardware and "arch_block" not in components:
+            components.append("arch_block")
 
         return components
 
@@ -146,7 +205,7 @@ class KernelBenchPromptBuilder(PromptBuilder):
     def _render_component(self, component: str, ref: str, backend_display: str) -> str:
         if component == "problem_statement":
             return self._toml.get("shared", {}).get("problem_statement", "").format(backend_display=backend_display)
-        if component == "architecture":
+        if component == "arch_block":
             template = self._toml.get("templates", {}).get("common", {}).get("arch_block")
             return (template or "You are given the following architecture:\n\n{ref_arch_src}").format(ref_arch_src=ref)
         if component == "precision_note":
@@ -225,12 +284,6 @@ class KernelBenchPromptBuilder(PromptBuilder):
             or "{example_label}\n\nInput architecture:\n\n{input_code}\n\nOptimized with {backend_display}:\n\n{output_code}"
         )
 
-        # Resolve example paths relative to the repo root.
-        repo_root = os.path.abspath(os.path.join(HERE, "..", ".."))
-
-        def _resolve(rel_path: str) -> str:
-            return _read_file(os.path.normpath(os.path.join(repo_root, rel_path)))
-
         if requires == "few_shot":
             pairs = backend_data.get("few_shot_examples") or []
             intro = "Here are examples showing how to embed custom " + backend_display + " in PyTorch:"
@@ -243,11 +296,17 @@ class KernelBenchPromptBuilder(PromptBuilder):
 
         entries = []
         for i, (in_rel, out_rel) in enumerate(pairs, 1):
+            input_code = _resolve_example(in_rel) if in_rel else ""
+            output_code = _resolve_example(out_rel) if out_rel else ""
+            # Drop examples whose files could not be resolved so a missing asset
+            # does not inject an empty, confusing block.
+            if not input_code or not output_code:
+                continue
             entries.append(
                 entry_template.format(
                     example_label=f"Example {i}:",
-                    input_code=_resolve(in_rel),
-                    output_code=_resolve(out_rel),
+                    input_code=input_code,
+                    output_code=output_code,
                     backend_display=backend_display,
                 )
             )
