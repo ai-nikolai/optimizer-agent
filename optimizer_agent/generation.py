@@ -24,7 +24,7 @@ Two independent feedback mechanisms exist:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from optimizer_agent.utils import extract_final_code_response
 

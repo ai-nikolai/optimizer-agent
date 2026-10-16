@@ -80,12 +80,20 @@ def _find_kb_prompts_dir() -> Optional[str]:
 
 
 def _load_toml(kb_prompts_dir: str) -> Dict[str, Any]:
-    """Load the KernelBench ``prompts.toml`` from the checked-out repo."""
-    import tomli
+    """Load the KernelBench ``prompts.toml`` from the checked-out repo.
+
+    Uses stdlib :mod:`tomllib` on Python 3.11+ and falls back to the
+    third-party :mod:`tomli` (same API) on 3.9/3.10 so the builder works
+    regardless of how the environment was installed.
+    """
+    try:
+        import tomllib as _toml  # Python 3.11+
+    except ImportError:
+        import tomli as _toml  # Python 3.9/3.10 fallback
 
     toml_path = os.path.join(kb_prompts_dir, "prompts.toml")
     with open(toml_path, "rb") as file:
-        return tomli.load(file)
+        return _toml.load(file)
 
 
 def _resolve_example(rel_path: str) -> str:
