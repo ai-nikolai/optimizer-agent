@@ -1,14 +1,8 @@
-import os
 import json
-import signal
-
-import time
-import uuid
-
 import argparse
-import sys
 
-from optimizer_agent.main import Agent
+from optimizer_agent.agent import Agent
+from optimizer_agent.prompt_config import PromptConfig
 
 # ANSI escape codes for colors and bold
 BOLD = '\033[1m'
@@ -19,6 +13,7 @@ BLUE = '\033[94m'
 MAGENTA = '\033[95m'
 CYAN = '\033[96m'
 RESET = '\033[0m'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Optimizer Agent CLI")
@@ -31,6 +26,11 @@ def parse_args():
 
     # Prompts related
     parser.add_argument("--prompt-config-file", type=str, help="Path to prompt configuration file, otherwise default is used.")
+    parser.add_argument("--use-kb-prompt", action="store_true", help="Use the KernelBench (TOML-driven) prompt style instead of the simple JSON style.")
+    parser.add_argument("--kb-backend", type=str, default="cuda", help="KernelBench backend: cuda, triton, cute, tilelang.")
+    parser.add_argument("--kb-option", type=str, default="one_shot", help="KernelBench example option: zero_shot, one_shot, few_shot.")
+    parser.add_argument("--kb-gpu", type=str, default="H200", help="KernelBench GPU name (from hardware/gpu_specs.py).")
+    parser.add_argument("--kb-precision", type=str, default="fp32", help="KernelBench precision: fp32, fp16, bf16.")
 
     # Map elites related
     parser.add_argument("--predecessor-selection-method", type=str, default="bestN_last", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"])
@@ -41,9 +41,11 @@ def parse_args():
     parser.add_argument("--use-strategy", action="store_true", help="Use strategy sub-agent")
     parser.add_argument("--use-feedback", action="store_true", help="Use feedback sub-agent")
     parser.add_argument("--use-debug", action="store_true", help="Use debug sub-agent")
-    parser.add_argument("--use-debug-strategy", action="store_true", help="Use strategy sub-agent")
-    parser.add_argument("--use-debug-feedback", action="store_true", help="Use feedback sub-agent")
     parser.add_argument("--diff-based", action="store_true", help="Use diffs only... (need to think how to implement)")
+
+    # Feedback strategy (result-driven). KB uses "error_case"; the simple style
+    # uses "generic"/"none"/"score".
+    parser.add_argument("--feedback-strategy", type=str, default="generic", help="Result-driven feedback strategy: none, generic, error_case, score.")
 
     # Model related
     parser.add_argument("--model-url", type=str, default="http://0.0.0.0:30000", help="Model URL")
@@ -53,7 +55,6 @@ def parse_args():
 
     # testing the agent
     parser.add_argument("--test", action="store_true", help="Test the engine")
-
 
     # Running the agent
     parser.add_argument("--baseline", type=str, required=True, help="Baseline Function")
@@ -66,49 +67,55 @@ def parse_args():
     return args
 
 
+def _default_prompt_path() -> str:
+    """Return the bundled simple-style default prompt config path."""
+    import os
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "examples", "test_example", "prompt_config.json")
+
+
 def main():
     args = parse_args()
+
+    # Load the prompt config (simple or kernel_bench).
+    config_path = args.prompt_config_file or _default_prompt_path()
+    use_kb = args.use_kb_prompt
+
+    kb_kwargs = {
+        "backend": args.kb_backend,
+        "option": args.kb_option,
+        "gpu_name": args.kb_gpu,
+        "precision": args.kb_precision,
+    }
+    prompt_config = PromptConfig.from_file(config_path, use_kb_prompt=use_kb, **kb_kwargs)
+    agent_kwargs = prompt_config.to_prompt_data()
+
     agent = Agent(
-        # general strategy: sequential, parallel, tree, graph...
-        # overall_strategy=args.overall_strategy, #is this needed? or is this implicit in N(iterations), I(islands), B(beams), selection_algorithm
-        # general args
-        num_iterations=args.num_iterations, #total "generations"
-        num_debug_iterations=args.num_debug_iterations, #num debug steps between generations
-        num_islands=args.num_islands, #completely independent runs (maybe with cross-over later)
-        num_samples=args.num_samples, #num generations from one predecessor/predecessor group
-        # prompts related:
-        prompt_config_file=args.prompt_config_file,
-        # predecessor selection related (e.g. elites)
-        # num_elites=args.num_elites, #is this needed?
-        predecessor_selection_method=args.predecessor_selection_method, #bestN_last (from last generations/iterations)=sequential,parallel, bestN_all (from all generations/iterations)=graph, map_elites, (this operates within a single island)
-        num_map_elites=args.num_map_elites, #by default topK map elites will be chosen (as dictated by best in elite) # default = None, (as only applicable to map elites) 
-        map_elites_method=args.map_elites_method, #cluster, fixed, dynamic
-        # Sub-agents
-        use_strategy=args.use_strategy, #if map_elites = stratgegy, but this is false, map elites will attempt to classify the strategy by itself.
+        num_iterations=args.num_iterations,
+        num_debug_iterations=args.num_debug_iterations,
+        num_islands=args.num_islands,
+        num_samples=args.num_samples,
+        predecessor_selection_method=args.predecessor_selection_method,
+        num_map_elites=args.num_map_elites,
+        map_elites_method=args.map_elites_method,
+        use_strategy=args.use_strategy,
         use_feedback=args.use_feedback,
         use_debug=args.use_debug,
-        use_debug_strategy=args.use_debug_strategy,
-        use_debug_feedback=args.use_debug_feedback,
-        diff_based=args.diff_based,
-        # model related:
+        feedback_strategy_name=args.feedback_strategy,
         model_name=args.model_name,
         model_url=args.model_url,
         model_api_key=args.model_api_key,
-        model_params=args.model_params, #dictionary e.g. {'temperature':0.1}
+        model_params=args.model_params,
         test=args.test,
+        **agent_kwargs,
     )
 
     agent.run(
-        baseline=args.baseline, 
+        baseline=args.baseline,
         evaluate=args.evaluate,
-        reference=args.reference, #this is optional
-        experiments_dir=args.experiments_dir
+        reference=args.reference,
+        experiments_dir=args.experiments_dir,
     )
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-
-
-# optimizer-agent --baseline "a.py" --evaluate "b.py"
