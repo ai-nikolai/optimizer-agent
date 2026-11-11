@@ -322,7 +322,10 @@ def run_evaluation(
 
         stdout_tail = _tail(stdout_path, tail_chars)
         stderr_tail = _tail(stderr_path, tail_chars)
-        parsed = extract_eval_results(stdout_tail)
+        # Parse a larger window than the feedback tail: the marker can be
+        # followed by a lot of evaluator logging.
+        parse_text = _tail(stdout_path, max(tail_chars, 1_000_000))
+        parsed = extract_eval_results(parse_text)
 
         if proc.returncode != 0:
             result = _failed(

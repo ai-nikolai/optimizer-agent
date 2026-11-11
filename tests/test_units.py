@@ -1088,6 +1088,22 @@ class AgentIntegrationTests(unittest.TestCase):
             self.assertEqual(len(resumed), 1)
             self.assertEqual(len(server.calls), 1)
 
+            # A partial summary must not be treated as a completed run.
+            partial = json.loads((experiments / "summary.json").read_text())
+            partial["completed"] = False
+            (experiments / "summary.json").write_text(json.dumps(partial))
+            partial_server = RecordingServer(["```python\nPARTIAL = 1\n```"])
+            partial_agent = Agent(
+                num_iterations=1, num_samples=1, server=partial_server
+            )
+            partial_history = partial_agent.run(
+                baseline=str(baseline),
+                evaluate=str(evaluator),
+                experiments_dir=str(experiments),
+            )
+            self.assertEqual(len(partial_history), 1)
+            self.assertEqual(len(partial_server.calls), 1)
+
             overwrite_server = RecordingServer(["```python\nB = 1\n```"])
             overwrite_agent = Agent(
                 num_iterations=1,
@@ -1152,6 +1168,11 @@ class AgentIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(len(history), 1)
             self.assertIn("alpha", server.calls[1][-1]["content"])
+            summary = json.loads(
+                (tmp / "experiments" / "summary.json").read_text()
+            )
+            self.assertEqual(summary["completed"], True)
+            self.assertIn("alpha", summary["map_elites_taxonomy"])
 
     def test_debug_loop_replaces_failed_candidate(self):
         with tempfile.TemporaryDirectory() as tmp:

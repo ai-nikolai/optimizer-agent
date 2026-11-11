@@ -108,7 +108,7 @@ echo "=== optimizer-agent KernelBench level ${LEVEL}, rounds ${ROUNDS}, limit '$
 python examples/kernelbench/run_level.py \
     --level "${LEVEL}" \
     --rounds "${ROUNDS}" \
-    "${EXTRA[@]}" \
+    "${EXTRA[@]+"${EXTRA[@]}"}" \
     --shard-index "${SHARD_INDEX}" \
     --num-shards "${NUM_SHARDS}" \
     --model-url "http://localhost:${PORT}" \

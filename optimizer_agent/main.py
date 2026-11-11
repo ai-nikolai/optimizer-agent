@@ -487,15 +487,17 @@ class Agent:
         if self.resume and not self.overwrite and summary_path.exists():
             try:
                 with open(summary_path, "r", encoding="utf-8") as handle:
-                    self.summary = json.load(handle)
-                self.history = self.summary.get("history", [])
-                self._resumed = True
-                print(f"Resuming completed experiment: {path}")
-                return True
+                    loaded_summary = json.load(handle)
+                if loaded_summary.get("completed", True):
+                    self.summary = loaded_summary
+                    self.history = self.summary.get("history", [])
+                    self._resumed = True
+                    print(f"Resuming completed experiment: {path}")
+                    return True
+                print("Warning: partial summary found; restarting this run.")
             except (OSError, ValueError):
                 print("Warning: existing summary.json is unreadable; restarting run")
-
-        if summary_path.exists() and not self.resume:
+        elif summary_path.exists() and not self.resume:
             print("Existing completed summary found; rerunning (resume disabled).")
         elif any(path.iterdir()):
             print(
@@ -645,12 +647,12 @@ class Agent:
         except KeyboardInterrupt:
             self.logger.warning("interrupted; writing partial summary")
             self._event("run_interrupted")
-            self._save_summary()
+            self._save_summary(completed=False)
             raise
         except Exception as exc:  # noqa: BLE001 - persist diagnostics then re-raise
             self.logger.exception("run failed: %s", exc)
             self._event("run_error", error=traceback.format_exc())
-            self._save_summary()
+            self._save_summary(completed=False)
             raise
         finally:
             self._event("run_end")
@@ -1119,14 +1121,19 @@ class Agent:
             prompt_data["reference_artifact"] = reference
         return prompt_data
 
-    def _save_summary(self):
+    def _save_summary(self, completed=True):
         best = None
         if self.history:
             best = max(
                 self.history,
                 key=lambda item: item.get("rank_score", item.get("score", float("-inf"))),
             )
-        self.summary = {"best": best, "history": self.history}
+        self.summary = {
+            "best": best,
+            "history": self.history,
+            "completed": bool(completed),
+            "map_elites_taxonomy": getattr(self.population, "taxonomy", None),
+        }
         write_file(
             self.experiments_dir, "summary.json", json.dumps(self.summary, indent=2)
         )
