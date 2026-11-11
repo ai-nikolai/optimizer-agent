@@ -1,0 +1,184 @@
+{
+    "improve": {
+        "core": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are an amazing CUDA kernel engineer. You will see a target PyTorch implementation. Replace it with an optimized CUDA implementation in the exact format described. Output only the complete Python code, with no explanation."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "reference",
+                    "artifact",
+                    "result",
+                    "failure_stage",
+                    "feedback"
+                ],
+                "prompts": {
+                    "task": "## Task\nReplace the PyTorch implementation with an optimized CUDA implementation. Define `ModelNew`, a `torch.nn.Module` whose `forward` matches the reference behaviour. Use `torch.utils.cpp_extension.load_inline` for the CUDA kernel. Do not use torch.nn except for Parameter, containers, and initialization. Inputs and outputs must stay on CUDA. Your answer must be the complete new architecture (no tests, no benchmark code).",
+                    "reference": "## Reference PyTorch implementation:\n{reference}",
+                    "artifact": "## Current implementation:\n{current_artifact}",
+                    "result": "## Previous evaluation:\n{result}",
+                    "failure_stage": "## Previous failure stage: {failure_stage}",
+                    "feedback": "## Repair feedback:\n{feedback}"
+                }
+            }
+        },
+        "strategy": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are a CUDA performance expert. Produce a short, concrete plan for making the implementation faster while preserving correctness."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "reference",
+                    "artifact",
+                    "result",
+                    "failure_stage"
+                ],
+                "prompts": {
+                    "task": "## Task: Propose a CUDA optimization plan.",
+                    "reference": "## Reference PyTorch implementation:\n{reference}",
+                    "artifact": "## Current implementation:\n{current_artifact}",
+                    "result": "## Previous evaluation:\n{result}",
+                    "failure_stage": "## Previous failure stage: {failure_stage}"
+                }
+            }
+        },
+        "feedback": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are a CUDA kernel expert reviewing the previous attempt. Be concrete about the compile/runtime/correctness issue or the next performance step."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "artifact",
+                    "result",
+                    "failure_stage",
+                    "hint",
+                    "error",
+                    "reference"
+                ],
+                "prompts": {
+                    "task": "## Task: Give concise feedback for the next CUDA attempt.",
+                    "artifact": "## Candidate implementation:\n{new_artifact}",
+                    "result": "## Evaluation:\n{result}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference PyTorch implementation:\n{reference}"
+                }
+            }
+        }
+    },
+    "debug": {
+        "core": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are an expert CUDA debugger. Fix the implementation so it compiles, loads, and produces correct output. Output only the complete Python code."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "artifact",
+                    "error",
+                    "failure_stage",
+                    "result",
+                    "feedback",
+                    "reference"
+                ],
+                "prompts": {
+                    "task": "## Task\nDebug the current CUDA implementation. Keep `ModelNew` and the `load_inline` structure. Fix the reported failure before optimizing.",
+                    "artifact": "## Current implementation:\n{current_artifact}",
+                    "error": "## Error:\n{error}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "result": "## Evaluation:\n{result}",
+                    "feedback": "## Feedback:\n{feedback}",
+                    "reference": "## Reference PyTorch implementation:\n{reference}"
+                }
+            }
+        },
+        "strategy": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are an expert CUDA debugger. Propose a short plan for fixing the failure."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "artifact",
+                    "error",
+                    "failure_stage",
+                    "reference"
+                ],
+                "prompts": {
+                    "task": "## Task: Propose a debugging plan.",
+                    "artifact": "## Current implementation:\n{current_artifact}",
+                    "error": "## Error:\n{error}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "reference": "## Reference PyTorch implementation:\n{reference}"
+                }
+            }
+        },
+        "feedback": {
+            "system": {
+                "order": [
+                    "system"
+                ],
+                "prompts": {
+                    "system": "You are an expert CUDA debugger. Explain the likely cause and the exact fix."
+                }
+            },
+            "user": {
+                "order": [
+                    "task",
+                    "artifact",
+                    "error",
+                    "failure_stage",
+                    "hint",
+                    "result",
+                    "reference"
+                ],
+                "prompts": {
+                    "task": "## Task: Give concise debugging feedback.",
+                    "artifact": "## Candidate implementation:\n{new_artifact}",
+                    "error": "## Error:\n{error}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}",
+                    "result": "## Evaluation:\n{result}",
+                    "reference": "## Reference PyTorch implementation:\n{reference}"
+                }
+            }
+        }
+    },
+    "feedback_strategy": "rules_llm",
+    "feedback_profile": "kernel",
+    "response_format": "code",
+    "artifact_extension": "py",
+    "score_key": "combined_score",
+    "task_description": "KernelBench: replace the reference PyTorch model with an optimized CUDA ModelNew.",
+    "predecessor_selection_method": "bestN_last",
+    "num_samples": 1
+}

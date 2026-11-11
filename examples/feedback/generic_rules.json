@@ -1,0 +1,16 @@
+{
+    "strategy": "rules",
+    "profile": "generic",
+    "hints": {
+        "empty": "No artifact was produced. Return the complete artifact in the requested format.",
+        "eval_error": "The evaluator could not score the attempt. Follow the evaluator contract.{detail}",
+        "invalid": "The proposal was rejected ({error_kind}). Fix that before optimizing.{detail}",
+        "valid": "Accepted. Improve {metric_name} without breaking validity. {metric_summary}"
+    },
+    "metric": {
+        "score_key": "combined_score",
+        "baseline_key": "baseline_score",
+        "higher_is_better": true,
+        "metric_name": "score"
+    }
+}
