@@ -20,4 +20,4 @@ EVAL_MARKER = "=== Evaluation Result ==="
 try:
     __version__ = version("optimizer-agent")
 except PackageNotFoundError:  # importing from a source checkout
-    __version__ = "0.0.0.2"
+    __version__ = "0.1.0.0"
