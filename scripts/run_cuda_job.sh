@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=optagent_cuda
-#SBATCH --output=logs/optagent_cuda_%j.out
-#SBATCH --error=logs/optagent_cuda_%j.err
+#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-simple
+#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_cuda_%j.out
+#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_cuda_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1

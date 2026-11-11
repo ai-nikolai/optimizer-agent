@@ -18,4 +18,5 @@ CURRENT_*.md
 last_session.json
 # job outputs
 /experiments/
-/logs/
+/logs/*
+!/logs/.gitkeep
