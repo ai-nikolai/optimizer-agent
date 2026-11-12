@@ -63,3 +63,19 @@ PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/openevolve/kernelbench/run_sl
 - OpenEvolve AlgoTune uses its native 5-trial correctness check, which is
   stronger than the optimizer-agent 2-seed AlgoTune check. This favours
   OpenEvolve, not the other way around.
+
+## Token accounting
+
+- **optimizer-agent runs**: each `history` entry now carries
+  `token_usage` (`prompt_tokens`, `completion_tokens`, `total_tokens`,
+  `calls`); `summary.json` carries the run total; the AlgoTune/KernelBench
+  driver CSVs expose the same four columns.
+- **OpenEvolve runs**: each task writes `token_usage.jsonl` from the
+  OpenAI-compatible response usage; the driver CSV exposes the summed
+  `prompt_tokens`, `completion_tokens`, `total_tokens`, `llm_calls`.
+- **robust_kernelbench**: already writes `in_tokens` and `out_tokens` in each
+  `generations.csv`.
+- **Reference-solver baseline**: no LLM calls, so token counts are zero.
+
+Runs that completed before the tracking patch do not have exact token counts;
+the vLLM logs only report aggregate throughput, not per-request usage.
