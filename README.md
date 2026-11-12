@@ -422,4 +422,17 @@ mkdir -p "$TMPDIR"
 pip install --no-cache-dir vllm
 ```
 
+## Analysis
+
+Experiment summaries can be collected and explored with the tools in
+`analysis/`:
+
+```bash
+python -m pip install -r analysis/requirements.txt
+python analysis/collect_results.py --experiments-dir experiments --version v5_0
+python analysis/interactive.py --data-dir experiments --version v5_0
+```
+
+See `analysis/README.md` for details.
+
 ## (C) Nikolai Rozanov - 2026 - Present
