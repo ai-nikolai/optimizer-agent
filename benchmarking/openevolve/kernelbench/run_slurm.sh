@@ -25,6 +25,9 @@ REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
 OPENEVOLVE_ROOT="/hx2-weka/home/nr1713/openevolve"
 ROBUST_KB="/hx2-weka/home/nr1713/robust_kernelbench"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
+if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
+    JOB_ID="${JOB_ID}_a${SLURM_ARRAY_TASK_ID}"
+fi
 SCRATCH="${TMPDIR:-/tmp}/openevolve_kb_${JOB_ID}"
 mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" \
     "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets" \
@@ -126,7 +129,11 @@ if [ "${PREPARE}" = "1" ]; then
 fi
 
 EXTRA=()
-if [ -n "${PROBLEM_IDS}" ]; then EXTRA+=(--problem-ids "${PROBLEM_IDS}"); fi
+if [ -n "${PROBLEM_IDS}" ]; then
+    EXTRA+=(--problem-ids "${PROBLEM_IDS}")
+else
+    EXTRA+=(--start "${PROBLEM_START}" --limit "${PROBLEM_LIMIT}")
+fi
 
 echo "=== OpenEvolve KernelBench level ${LEVEL}, iterations=${ITERATIONS} at $(date +%T)"
 python benchmarking/openevolve/kernelbench/run_tasks.py \
