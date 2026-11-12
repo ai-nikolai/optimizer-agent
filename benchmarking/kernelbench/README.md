@@ -31,12 +31,12 @@ optimizer-agent:
 ```bash
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate env_kb2
-cd /hx2-weka/home/nr1713/optimizer-agent-simple
+cd /hx2-weka/home/nr1713/optimizer-agent-benchmarking
 export PYTHONPATH=$PWD
 export ROBUST_KERNELBENCH_ROOT=/hx2-weka/home/nr1713/robust_kernelbench
 export CUDA_VISIBLE_DEVICES=1          # evaluator GPU; server on another GPU
 
-python examples/kernelbench/run_level.py \
+python benchmarking/kernelbench/run_level.py \
     --level 1 \
     --rounds 3 \
     --limit 5 \
@@ -63,10 +63,10 @@ its own GPU, all pointing at the same model server):
 
 ```bash
 # GPU 1
-CUDA_VISIBLE_DEVICES=1 python examples/kernelbench/run_level.py \
+CUDA_VISIBLE_DEVICES=1 python benchmarking/kernelbench/run_level.py \
     --level 1 --rounds 3 --num-shards 4 --shard-index 0 ...
 # GPU 2
-CUDA_VISIBLE_DEVICES=2 python examples/kernelbench/run_level.py \
+CUDA_VISIBLE_DEVICES=2 python benchmarking/kernelbench/run_level.py \
     --level 1 --rounds 3 --num-shards 4 --shard-index 1 ...
 # ...
 ```
@@ -128,7 +128,7 @@ Other useful mixes:
 Example with a non-default feedback strategy:
 
 ```bash
-python examples/kernelbench/run_level.py \
+python benchmarking/kernelbench/run_level.py \
     --level 1 --rounds 3 --limit 5 \
     --predecessor-selection-method bestN_last \
     --feedback-strategy rules \

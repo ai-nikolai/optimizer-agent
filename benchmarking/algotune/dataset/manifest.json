@@ -1,0 +1,106 @@
+[
+  {
+    "task": "affine_transform_2d",
+    "category": "signal_processing",
+    "n": 1024,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "2D Affine Transform\n\nApply a 2D affine transformation to an input image (2D array). The transformation is defined by a 2x3 matrix which combines rotation, scaling, shearing, and translation. This task uses cubic spline interpolation (order=3) and handles boundary conditions using the 'constant' mode (padding with 0).\n\nInput:\nA dictionary with keys:\n  - \"image\": An n x n array of floats (in the range [0.0, 255.0]) representing the input image.\n  - \"matrix\": A 2x3 array representing the affine transformation matrix.\n\nExample input:\n{\n    \"image\": [\n        [100.0, 150.0, 200.0],\n        [50.0, 100.0, 150.0],\n        [0.0, 50.0, 100.0]\n    ],\n    \"matrix\": [\n        [0.9, -0.1, 1.5],\n        [0.1, 1.1, -2.0]\n    ]\n}\n\nOutput:\nA dictionary with key:\n  - \"transformed_image\": The transformed image array of shape (n, n).\n\nExample output:\n{\n    \"transformed_image\": [\n        [88.5, 141.2, 188.0],\n        [45.1, 99.8, 147.3],\n        [5.6, 55.2, 103.1]\n    ]\n}\n\nCategory: signal_processing",
+    "baseline": "tasks/affine_transform_2d/baseline.py",
+    "reference": "tasks/affine_transform_2d/reference.txt",
+    "task_source": "tasks/affine_transform_2d/task_source.py"
+  },
+  {
+    "task": "convolve2d_full_fill",
+    "category": "signal_processing",
+    "n": 6,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "Convolve2D Full Fill\n\nThis task computes the two-dimensional convolution of two matrices.  \nThe input is a tuple of two 2D arrays: the first array has dimensions (30*n)\u00d7(30*n) and the second has dimensions (8*n)\u00d7(8*n), where n is a scaling factor that increases the problem size.  \nThe convolution is performed in \"full\" mode (all overlapping regions are computed) with \"fill\" boundary handling (treating areas outside the array as zeros).  \nThe output is a 2D array representing the convolution result.\n\nInput:\nA tuple of two 2D arrays:\n - First array: a (30*n)\u00d7(30*n) matrix of real numbers.\n - Second array: a (8*n)\u00d7(8*n) matrix of real numbers.\n\nExample input:\na = \n[[ 0.08704727, -1.45436573,  0.76103773, ...,  0.44386323,  0.33367433, -1.49407907],\n [ 0.3130677,  -0.85409574, -2.55298982, ...,  0.6536186,   0.8644362,  -0.74216502],\n ...\n [ 0.3130677,  -0.85409574, -2.55298982, ...,  0.6536186,   0.8644362,  -0.74216502]]\nb = \n[[ 0.04575964, -0.18718385,  1.53277921, ..., -0.91202677,  0.72909056,  0.12898291],\n [ 0.17904984, -0.0342425,   0.97873798, ...,  0.14204471,  0.6154001,  -0.29169375],\n ...\n [ 0.17904984, -0.0342425,   0.97873798, ...,  0.14204471,  0.6154001,  -0.29169375]]\n\nOutput:\nA 2D array representing the full convolution result.\n\nExample output:\n[[ 0.123456, -1.234567,  0.345678, ..., -0.456789,  1.234567,  0.987654],\n [-0.234567,  0.456789, -1.345678, ...,  0.567890, -0.123456, -0.987654],\n ...\n [ 0.345678, -0.456789,  1.234567, ..., -0.345678,  0.456789, -1.234567]]\n\nCategory: signal_processing",
+    "baseline": "tasks/convolve2d_full_fill/baseline.py",
+    "reference": "tasks/convolve2d_full_fill/reference.txt",
+    "task_source": "tasks/convolve2d_full_fill/task_source.py"
+  },
+  {
+    "task": "eigenvectors_complex",
+    "category": "matrix_operations",
+    "n": 512,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "EigenvectorsComplex Task:\n\nGiven a square matrix with real entries, the task is to compute its eigenpairs (eigenvalues and eigenvectors).\nAlthough the matrix is real, its eigenvalues may be complex.\nThe goal is to compute the approximated eigenpairs and return:\n  - A list of eigenvalues (complex numbers) sorted in descending order. The sorting order is defined as:\n      first by the real part (in descending order), then by the imaginary part (in descending order).\n  - A list of corresponding eigenvectors, each represented as a list of complex numbers, normalized to unit Euclidean norm.\n\nA valid solution is a tuple (eigenvalues, eigenvectors) where:\n  - eigenvalues is a list of n numbers (complex or real) sorted as specified.\n  - eigenvectors is an array of n eigenvectors, each of length n, representing the eigenvector corresponding to the eigenvalue at the same index.\n\nInput: A square matrix represented as an array of real numbers.\n\nExample input:\n[\n    [1.2, -0.5],\n    [0.3,  2.1]\n]\n\nOutput: A tuple consisting of:\n  - A list of approximated eigenvalues (which may be complex) sorted in descending order.\n  - A list of corresponding eigenvectors (each a list of complex numbers) normalized to unit Euclidean norm.\n\nExample output:\n(\n  [(2.5+0j), (-0.2+0.3j)],\n  [\n    [(0.8+0j), (0.6+0j)],\n    [(0.4+0.3j), (-0.7+0.2j)]\n  ]\n)\n\nCategory: matrix_operations",
+    "baseline": "tasks/eigenvectors_complex/baseline.py",
+    "reference": "tasks/eigenvectors_complex/reference.txt",
+    "task_source": "tasks/eigenvectors_complex/task_source.py"
+  },
+  {
+    "task": "fft_cmplx_scipy_fftpack",
+    "category": "signal_processing",
+    "n": 2048,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "FFT Complex\n\nThis task requires computing the N-dimensional Fast Fourier Transform (FFT) of a complex-valued matrix.  \nThe FFT is a mathematical technique that converts data from the spatial (or time) domain into the frequency domain, revealing both the magnitude and phase of the frequency components.  \nThe input is a square matrix of size n\u00d7n, where each element is a complex number containing both real and imaginary parts.  \nThe output is a square matrix of the same size, where each entry is a complex number representing a specific frequency component of the input data, including its amplitude and phase.  \nThis transformation is crucial in analyzing signals and data with inherent complex properties.\n\nInput:\nA complex-valued n\u00d7n matrix represented as an array of complex numbers.\n\nExample input:\n[[0.5+0.5j, 0.7+0.7j],\n [0.2+0.2j, 0.9+0.9j]]\n\nOutput:\nAn n\u00d7n matrix of complex numbers, where each element provides the frequency-domain information of the corresponding element in the input matrix.\n\nExample output:\n[[(1.8+0.3j), (-0.2+0.1j)],\n [(0.3-0.1j), (0.6+0.2j)]]\n\nCategory: signal_processing",
+    "baseline": "tasks/fft_cmplx_scipy_fftpack/baseline.py",
+    "reference": "tasks/fft_cmplx_scipy_fftpack/reference.txt",
+    "task_source": "tasks/fft_cmplx_scipy_fftpack/task_source.py"
+  },
+  {
+    "task": "fft_convolution",
+    "category": "signal_processing",
+    "n": 8192,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "FFT Convolution Task:\n\nGiven two signals x and y, the task is to compute their convolution using the Fast Fourier Transform (FFT) approach. The convolution of x and y is defined as:\n\n    z[n] = sum_k x[k] * y[n-k]\n\nUsing the FFT approach exploits the fact that convolution in the time domain is equivalent to multiplication in the frequency domain, which provides a more efficient computation for large signals.\n\nInput:\n\nA dictionary with keys:\n  - \"signal_x\": A list of numbers representing the first signal x.\n  - \"signal_y\": A list of numbers representing the second signal y.\n  - \"mode\": A string indicating the convolution mode: \n    - \"full\": Returns the full convolution (output length is len(x) + len(y) - 1)\n    - \"same\": Returns the central part of the convolution (output length is max(len(x), len(y)))\n    - \"valid\": Returns only the parts where signals fully overlap (output length is max(len(x) - len(y) + 1, 0))\n\nExample input:\n\n{\n    \"signal_x\": [1.0, 2.0, 3.0, 4.0],\n    \"signal_y\": [5.0, 6.0, 7.0],\n    \"mode\": \"full\"\n}\n\n\nOutput:\n\nA dictionary with key:\n  - \"result\": A numpy array representing the convolution result.\n\nExample output:\n\n{\n    \"result\": [5.0, 16.0, 34.0, 52.0, 45.0, 28.0]\n}\n\n\nNotes:\n\n- The implementation should use Fast Fourier Transform for efficient computation.\n- Special attention should be paid to the convolution mode as it affects the output dimensions.\n\nCategory: signal_processing",
+    "baseline": "tasks/fft_convolution/baseline.py",
+    "reference": "tasks/fft_convolution/reference.txt",
+    "task_source": "tasks/fft_convolution/task_source.py"
+  },
+  {
+    "task": "lu_factorization",
+    "category": "matrix_operations",
+    "n": 1024,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "LUFactorization Task:\n\nGiven a square matrix A, the task is to compute its LU factorization.\nThe LU factorization decomposes A as:\n\n    A = P \u00b7 L \u00b7 U\n\nwhere P is a permutation matrix, L is a lower triangular matrix with ones on the diagonal, and U is an upper triangular matrix.\n\nInput: A dictionary with key:\n  - \"matrix\": An array representing the square matrix A. (The dimension n is inferred from the matrix.)\n\nExample input:\n{\n    \"matrix\": [\n        [2.0, 3.0],\n        [5.0, 4.0]\n    ]\n}\n\nOutput: A dictionary with a key \"LU\" that maps to another dictionary containing three matrices:\n- \"P\" is the permutation matrix that reorders the rows of A.\n- \"L\" is the lower triangular matrix with ones on its diagonal.\n- \"U\" is the upper triangular matrix.\nThese matrices satisfy the equation A = P L U.\n\nExample output:\n{\n    \"LU\": {\n        \"P\": [[0.0, 1.0], [1.0, 0.0]],\n        \"L\": [[1.0, 0.0], [0.4, 1.0]],\n        \"U\": [[5.0, 4.0], [0.0, 1.4]]\n    }\n}\n\nCategory: matrix_operations",
+    "baseline": "tasks/lu_factorization/baseline.py",
+    "reference": "tasks/lu_factorization/reference.txt",
+    "task_source": "tasks/lu_factorization/task_source.py"
+  },
+  {
+    "task": "polynomial_real",
+    "category": "numerical_methods",
+    "n": 200,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "PolynomialReal Task:\n\nGiven a polynomial of degree n with all real roots, the task is to approximate the roots of the polynomial.\nThe goal is to compute the approximated roots so that each is within 0.001 of the true value\u2014i.e., correct to at least three decimal places (any extra precision beyond three decimal places is not considered).\nA given solution's distance is said to be the average absolute difference between the approximated roots and the true roots.\n\nInput: A list of polynomial coefficients in descending order.\n\nExample input:\n[1.0, -3.54, 3.25, -1.17, 0.23],\n\n(The polynomial is x^4 - 3.54x^3 + 3.25x^2 - 1.17x + 0.23)\n\nOutput: A list of approximated roots in descending order.\n\nExample output:\n[1.544, 1.022, -0.478, -1.273]\n\nCategory: numerical_methods\n",
+    "baseline": "tasks/polynomial_real/baseline.py",
+    "reference": "tasks/polynomial_real/reference.txt",
+    "task_source": "tasks/polynomial_real/task_source.py"
+  },
+  {
+    "task": "psd_cone_projection",
+    "category": "convex_optimization",
+    "n": 256,
+    "seeds": [
+      1,
+      2
+    ],
+    "description": "Positive Semidefinite Cone Projection Problem\n\n\n\nThe goal of this task is to compute the projection of given symmetric matrix onto the cone of symmetric positive semidefinite matrices, which we will refer to as PSD cone. Then the optimization problem to be solved becomes:\n\n    minimize    |A - X|^2\n    subject to  X is a symmetric positive semidefinite matrix\n\nwith variable:\n- X is a symmetric positive semidefinite matrix,\n\nand with problem parameters to be given:\n- A is a symmetric matrix.\n\nNote that for this setting, we use either the spectral norm or Frobenius norm as a matrix norm defined in the objective above. It is well-known in the linear algebra literature that above problem gives the same optimal X for either of the matrix norms. This optimal X can be obtained from the eigen-decomposition of A as following.\n\nLet the eigendecomposition of A be\n    A = sum_{i=1}^n lambda_i (u_i * u_i^T)\nwhere lambda_i is an i-th eigenvalue of A and u_i is an eigenvector corresponding to lambda_i. Then X is uniquely determined as\n    X = sum_{i=1}^n max(lambda_i, 0) (u_i * u_i^T)\n\n\nInput: A dictionary of keys:\n- \"A\": An array representing an n-by-n symmetric matrix to be projected onto the PSD cone.\n\n\nExample input:\n{\n    \"A\": [[ 1.0, -2.0,  3.0],\n          [-2.0,  3.0, -2.0],\n          [ 3.0, -2.0,  1.0]]\n}\n\n\nOutput: A dictionary of keys:\n- \"X\": An array. This is a symmetric positive semidefinite matrix obtained by projecting A onto PSD cone.\n\n\nExample output:\n{\n    \"X\": [[ 2.0, -2.0,  2.0],\n          [-2.0,  3.0, -2.0],\n          [ 2.0, -2.0,  2.0]]\n}\n\nCategory: matrix_operations\n",
+    "baseline": "tasks/psd_cone_projection/baseline.py",
+    "reference": "tasks/psd_cone_projection/reference.txt",
+    "task_source": "tasks/psd_cone_projection/task_source.py"
+  }
+]

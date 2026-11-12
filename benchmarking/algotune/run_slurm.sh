@@ -1,41 +1,36 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=optagent_kb
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-simple
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_kb_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_kb_%j.err
-#SBATCH --time=04:00:00
+#SBATCH --job-name=optagent_algotune
+#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
+#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_algotune_%j.out
+#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_algotune_%j.err
+#SBATCH --time=24:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=128G
 
-# KernelBench / robust_kernelbench-style job for optimizer-agent.
+# AlgoTune benchmark for optimizer-agent.
 #   GPU 0: vLLM server
-#   GPU 1: run_level.py driver + evaluator subprocess
+#   CPU: agent + AlgoTune evaluator (selected tasks are CPU-based)
 #
-# Defaults to a 5-problem smoke run. Use LIMIT="" for the whole level:
-#   LIMIT="" sbatch scripts/run_kernelbench_job.sh
-#
-# Environment overrides: MODEL_NAME, LEVEL, ROUNDS, LIMIT, SHARD_INDEX,
-# NUM_SHARDS, GPU_MEM_UTIL, MAX_MODEL_LEN, MAX_TOKENS, KB_*_TRIALS.
+# Smoke test: LIMIT=1 ROUNDS=1 sbatch benchmarking/algotune/run_slurm.sh
+# Full manifest: sbatch benchmarking/algotune/run_slurm.sh
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-simple"
-ROBUST_KB="/hx2-weka/home/nr1713/robust_kernelbench"
+REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
+ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-/hx2-weka/home/nr1713/AlgoTune}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
 GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
-LEVEL="${LEVEL:-1}"
-ROUNDS="${ROUNDS:-3}"
-LIMIT="${LIMIT-5}"
-SHARD_INDEX="${SHARD_INDEX:-0}"
-NUM_SHARDS="${NUM_SHARDS:-1}"
-EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_kb_level${LEVEL}_${JOB_ID}}"
+ROUNDS="${ROUNDS:-5}"
+LIMIT="${LIMIT:-}"
+TASKS="${TASKS:-}"
+EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/algotune_v1_${JOB_ID}}"
 
 cd "${REPO}"
 mkdir -p logs experiments
@@ -48,7 +43,7 @@ export PATH="/usr/local/cuda/bin:${PATH}"
 export CUDA_HOME="/usr/local/cuda"
 export PYTHONUNBUFFERED=1
 
-echo "=== starting vLLM for KernelBench job ${JOB_ID} at $(date +%T)"
+echo "=== starting vLLM job ${JOB_ID} at $(date +%T)"
 setsid python3 -m vllm.entrypoints.openai.api_server \
     --model "${MODEL_NAME}" \
     --served-model-name "${MODEL_NAME}" \
@@ -58,7 +53,7 @@ setsid python3 -m vllm.entrypoints.openai.api_server \
     --max-model-len "${MAX_MODEL_LEN}" \
     --gpu-memory-utilization "${GPU_MEM_UTIL}" \
     --dtype bfloat16 \
-    --enforce-eager > "logs/vllm_optagent_kb_${JOB_ID}.log" 2>&1 &
+    --enforce-eager > "logs/vllm_algotune_${JOB_ID}.log" 2>&1 &
 SERVER_PID=$!
 
 cleanup() {
@@ -77,7 +72,7 @@ for _ in $(seq 1 1800); do
     fi
     kill -0 "${SERVER_PID}" 2>/dev/null || {
         echo "FATAL: vLLM died during startup" >&2
-        tail -40 "logs/vllm_optagent_kb_${JOB_ID}.log" >&2
+        tail -40 "logs/vllm_algotune_${JOB_ID}.log" >&2
         exit 1
     }
     sleep 2
@@ -90,35 +85,28 @@ fi
 
 conda deactivate
 conda activate env_kb2
-export PYTHONPATH="${REPO}"
-export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
-export CUDA_VISIBLE_DEVICES=1
-export MAX_JOBS="${MAX_JOBS:-4}"
+export PYTHONPATH="${REPO}:${ALGOTUNE_ROOT}:${PYTHONPATH:-}"
+export CUDA_VISIBLE_DEVICES=""
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
-export KB_NUM_CORRECT_TRIALS="${KB_NUM_CORRECT_TRIALS:-5}"
-export KB_NUM_PERF_TRIALS="${KB_NUM_PERF_TRIALS:-3}"
-export KB_FLUSH_L2="${KB_FLUSH_L2:-1}"
+export ALGOTUNE_ROOT
+export ALGOTUNE_TIMING_RUNS="${ALGOTUNE_TIMING_RUNS:-3}"
+export ALGOTUNE_WARMUPS="${ALGOTUNE_WARMUPS:-1}"
+export ALGOTUNE_SOLVE_TIMEOUT="${ALGOTUNE_SOLVE_TIMEOUT:-120}"
 
 EXTRA=()
-if [ -n "${LIMIT}" ]; then
-    EXTRA+=(--limit "${LIMIT}")
-fi
+if [ -n "${LIMIT}" ]; then EXTRA+=(--limit "${LIMIT}"); fi
+if [ -n "${TASKS}" ]; then EXTRA+=(--tasks "${TASKS}"); fi
 
-echo "=== optimizer-agent KernelBench level ${LEVEL}, rounds ${ROUNDS}, limit '${LIMIT}' at $(date +%T)"
-python examples/kernelbench/run_level.py \
-    --level "${LEVEL}" \
+echo "=== optimizer-agent AlgoTune at $(date +%T)"
+python benchmarking/algotune/run_tasks.py \
     --rounds "${ROUNDS}" \
     "${EXTRA[@]+"${EXTRA[@]}"}" \
-    --shard-index "${SHARD_INDEX}" \
-    --num-shards "${NUM_SHARDS}" \
+    --algotune-root "${ALGOTUNE_ROOT}" \
     --model-url "http://localhost:${PORT}" \
     --model-name "${MODEL_NAME}" \
     --model-params "{\"temperature\": 0.2, \"max_tokens\": ${MAX_TOKENS}}" \
-    --prompt-config examples/kernelbench/prompt_config.json \
-    --feedback-config examples/feedback/kernel_rules_llm.json \
-    --evaluate examples/kernelbench/evaluate.py \
     --experiments-dir "${EXPERIMENT_DIR}"
 RC=$?
-echo "=== optimizer-agent KernelBench rc=${RC} at $(date +%T)"
+echo "=== optimizer-agent AlgoTune rc=${RC} at $(date +%T)"
 
 exit "${RC}"

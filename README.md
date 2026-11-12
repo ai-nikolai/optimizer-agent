@@ -329,13 +329,19 @@ A complete non-code example lives in `examples/generic_task/` (tagline
 optimization, raw text artifacts, evaluator-supplied feedback).
 
 For a KernelBench / `robust_kernelbench` replication there is
-`examples/kernelbench/`: a task-specific evaluator around
+`benchmarking/kernelbench/`: a task-specific evaluator around
 `eval_kernel_against_ref`, a KernelBench prompt config, and a `run_level.py`
 driver. It uses `--predecessor-selection-method bestN_last` with
 `num_samples=1`, so each round repairs the **previous** candidate like
 robust_kernelbench, and supports `stage_prompts` for whole-prompt switching per
 failure stage. See
-`examples/kernelbench/README.md` for the exact commands.
+`benchmarking/kernelbench/README.md` for the exact commands.
+
+For AlgoTune there is `benchmarking/algotune/`: a task manifest built from the
+official AlgoTune repository, a correctness/timing evaluator, a driver, and a
+Slurm launcher. The official AlgoTune dataset already exists on Hugging Face, so
+the local dataset is a lightweight task manifest rather than a copy of the
+328 GB instance dataset. See `benchmarking/algotune/README.md`.
 
 This is **not a new agent type**: it is a feedback / repair strategy inside the
 existing generation loop. A new agent would only be warranted if it needed its

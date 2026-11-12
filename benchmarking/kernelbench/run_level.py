@@ -13,7 +13,7 @@ evaluator adapter and the prompt/feedback JSON in this directory.
 
 Example (model server already running on port 30000):
 
-    python examples/kernelbench/run_level.py \
+    python benchmarking/kernelbench/run_level.py \
         --level 1 --rounds 3 \
         --model-url http://localhost:30000 \
         --model-name Qwen/Qwen3-Coder-30B-A3B-Instruct \
