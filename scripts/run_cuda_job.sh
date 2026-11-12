@@ -5,7 +5,7 @@
 #SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_cuda_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:1,scratch:100g
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
@@ -18,6 +18,14 @@ set -uo pipefail
 
 REPO="/hx2-weka/home/nr1713/optimizer-agent-simple"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
+SCRATCH="${TMPDIR:-/tmp}/optagent_cuda_${JOB_ID}"
+mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets"
+export TMPDIR="${SCRATCH}/tmp"
+export TORCH_EXTENSIONS_DIR="${SCRATCH}/torch_extensions"
+export TRITON_CACHE_DIR="${SCRATCH}/triton"
+export TORCHINDUCTOR_CACHE_DIR="${SCRATCH}/torchinductor"
+export XDG_CACHE_HOME="${SCRATCH}/xdg"
+export HF_DATASETS_CACHE="${SCRATCH}/hf_datasets"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
 GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.55}"
