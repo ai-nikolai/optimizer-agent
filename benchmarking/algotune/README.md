@@ -102,7 +102,8 @@ python benchmarking/algotune/check_full_run.py \
   --smoke --tasks affine_transform_2d,svm,tsp
 ```
 
-The current full manifest passes the quick check for all 154 tasks.
+The current full manifest passes the quick check for all 154 tasks, and all
+154 tasks pass the `--smoke` generate/solve/validate check.
 
 ## Run
 
@@ -154,7 +155,7 @@ The full suite needs more than the original 8-task set. `env_kb2` currently has
 the missing packages installed:
 
 ```text
-cvxpy, ortools, scikit-learn, python-sat, hdbscan, pot, faiss-cpu
+cvxpy, ecos, ortools, scikit-learn, python-sat, hdbscan, pot, faiss-cpu
 ```
 
 All 154 tasks import successfully. `orjson` is also required by the official
