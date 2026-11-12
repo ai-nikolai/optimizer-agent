@@ -77,10 +77,17 @@ def parse_best(task_dir):
     except ValueError:
         return None
     evaluation = info.get("evaluation_result") or {}
+    metrics = info.get("metrics") or {}
     return {
-        "best_score": info.get("score", evaluation.get("combined_score")),
+        "best_score": info.get(
+            "score", metrics.get("combined_score", evaluation.get("combined_score"))
+        ),
         "best_speedup": info.get(
-            "speedup_score", evaluation.get("speedup_score", evaluation.get("combined_score"))
+            "speedup_score",
+            metrics.get(
+                "speedup_score",
+                evaluation.get("speedup_score", evaluation.get("combined_score")),
+            ),
         ),
         "best_path": str(best_dir / "best_program.py"),
         "info": info,
