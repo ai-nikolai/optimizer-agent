@@ -25,7 +25,7 @@ app.title = "optimizer-agent Interactive Metric Viewer"
 # Loaded from CLI arguments.
 DATA_DIR = Path(".")
 VERSION = "v4_2_0_0"
-metrics = ['compiled', 'loading_success', 'correctness', 'runtime_custom_ms', 'runtime_original_ms', 'combined_score', 'fast_1', 'fast_2', 'new_combined_score']
+metrics = ['compiled', 'loading_success', 'correctness', 'runtime_custom_ms', 'runtime_original_ms', 'combined_score', 'fast_1', 'fast_2', 'new_combined_score', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'llm_calls']
 
 # Parse method components
 def parse_method(method_name):

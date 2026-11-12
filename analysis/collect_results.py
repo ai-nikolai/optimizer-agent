@@ -41,6 +41,12 @@ METHOD_FIELDS = (
     ("use_strategy", "strat"),
     ("use_feedback", "feed"),
 )
+TOKEN_COLUMNS = [
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "llm_calls",
+]
 SCORE_COLUMNS = [
     "compiled",
     "loading_success",
@@ -143,6 +149,7 @@ def collect_rows(experiments_dir):
         pid = problem_id(summary_path)
         for entry in history:
             scores = entry.get("scores") or {}
+            usage = entry.get("token_usage") or {}
             row = {
                 "method_name": name,
                 "problem_id": pid,
@@ -155,6 +162,10 @@ def collect_rows(experiments_dir):
                 "runtime_custom_ms": scores.get("runtime_custom_ms"),
                 "runtime_original_ms": scores.get("runtime_original_ms"),
                 "combined_score": scores.get("combined_score"),
+                "prompt_tokens": usage.get("prompt_tokens", 0),
+                "completion_tokens": usage.get("completion_tokens", 0),
+                "total_tokens": usage.get("total_tokens", 0),
+                "llm_calls": usage.get("calls", 0),
             }
             rows.append(row)
     return rows, summaries
@@ -173,6 +184,8 @@ def build_tables(rows, version, output_dir):
         df[column] = df[column].fillna(False).astype(bool).astype(int)
     for column in ("runtime_custom_ms", "runtime_original_ms", "combined_score"):
         df[column] = df[column].apply(finite)
+    for column in TOKEN_COLUMNS:
+        df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0).astype(int)
 
     df["fast_1"] = (
         (df["correctness"] == 1)
@@ -212,6 +225,14 @@ def build_tables(rows, version, output_dir):
     grouped["new_combined_score"] = (
         grouped["runtime_original_ms"] - grouped["runtime_custom_ms"]
     )
+    token_sums = (
+        df.groupby(["method_name", "iteration"])[TOKEN_COLUMNS]
+        .sum()
+        .reset_index()
+    )
+    grouped = grouped.merge(token_sums, on=["method_name", "iteration"], how="left")
+    for column in TOKEN_COLUMNS:
+        grouped[column] = grouped[column].fillna(0).astype(int)
     grouped.drop(columns=["num_problems"]).to_csv(
         output_dir / f"experiment_results_summary_{version}.csv", index=False
     )
@@ -221,6 +242,11 @@ def build_tables(rows, version, output_dir):
     cumulative[columns] = cumulative.groupby("method_name")[columns].cummax()
     cumulative.drop(columns=["num_problems"]).to_csv(
         output_dir / f"experiment_results_summary_agg_{version}.csv", index=False
+    )
+
+    token_totals = df.groupby("method_name")[TOKEN_COLUMNS].sum().reset_index()
+    token_totals.to_csv(
+        output_dir / f"experiment_results_tokens_{version}.csv", index=False
     )
 
     return len(rows), df["method_name"].nunique()
