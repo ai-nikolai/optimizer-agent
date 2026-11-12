@@ -1,106 +1,181 @@
 {
-    "improve" :{ 
-        "core":{
+    "improve": {
+        "core": {
             "system": {
-                "prompts" : {
-                    "system": "You are an expert AI scientist."
+                "prompts": {
+                    "system": "You are an expert AI scientist and software engineer. Return the complete improved code in one fenced code block."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is to optimize/improve the given task",
-                    "implementation" : "## Current Implementation: {current_implementation}",
-                    "strategy" : "## Strategy: Follow the following strategy {strategy}",
-                    "feedback" : "## Feedback: Here is additional feedback {feedback}"
+                "prompts": {
+                    "task": "## Task: Optimize/improve the implementation while preserving its behaviour.",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "result": "## Result of the current implementation:\n{result}",
+                    "strategy": "## Strategy:\n{strategy}",
+                    "feedback": "## Feedback:\n{feedback}",
+                    "failure_stage": "## Previous failure stage:\n{failure_stage}"
                 },
-                "order" : ["task","implementation","strategy","feedback"]
+                "order": [
+                    "task",
+                    "reference",
+                    "implementation",
+                    "result",
+                    "failure_stage",
+                    "strategy",
+                    "feedback"
+                ]
             }
         },
-        "strategy":{
+        "strategy": {
             "system": {
-                "prompts" :{
-                    "system" : "You are an expert AI scientist and focus on generating the idea and plan"
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on generating the idea and plan."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is to create a implementation plan for improving.",
-                    "implementation": "## Current Implementation: {current_implementation}",
-                    "result": "## Results: The previous result was: {result}",
-                    "reference_result": "##Reference result: {reference_result}"
+                "prompts": {
+                    "task": "## Task: Create an implementation plan for improving the code.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "result": "## Current result:\n{result}",
+                    "reference": "## Reference Implementation:\n{reference}"
                 },
-                "order" : ["task","implementation","result","reference_result"]
+                "order": [
+                    "task",
+                    "implementation",
+                    "result",
+                    "reference"
+                ]
             }
         },
-        "feedback":{
+        "feedback": {
             "system": {
-                "prompts" :{
-                    "system":"You are an expert AI scientist and focus on reviewing previous solutions and generating feedback"
+                "prompts": {
+                    "system": "You are an expert AI scientist reviewing a candidate and generating feedback."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is provide feedback on the implementation",
-                    "implementation": "## Current Implementation: {current_implementation}",
-                    "result": "## Results: The previous result was: {result}"
+                "prompts": {
+                    "task": "## Task: Provide concise feedback for the next attempt.",
+                    "implementation": "## Candidate Implementation:\n{new_implementation}",
+                    "result": "## Result:\n{result}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}"
                 },
-                "order" : ["task","implementation","result"]
+                "order": [
+                    "task",
+                    "implementation",
+                    "result",
+                    "failure_stage",
+                    "hint",
+                    "error",
+                    "reference"
+                ]
             }
         }
     },
-    "debug":{
-        "core":{
+    "debug": {
+        "core": {
             "system": {
-                "prompts" :{
-                    "system" : "You are an expert AI scientist and focus on debugging."
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on debugging. Return the complete fixed code in one fenced code block."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is to debug the current solution",
-                    "implementation":"## Current Implementation: {current_implementation}",
-                    "strategy" : "## Strategy: {strategy}",
-                    "feedback" : "## Feedback: {feedback}"
+                "prompts": {
+                    "task": "## Task: Debug the current implementation so it runs successfully.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "result": "## Result:\n{result}",
+                    "strategy": "## Strategy:\n{strategy}",
+                    "feedback": "## Feedback:\n{feedback}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}"
                 },
-                "order" : ["task","implementation","strategy","feedback"]
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "failure_stage",
+                    "reference",
+                    "result",
+                    "strategy",
+                    "feedback"
+                ]
             }
         },
-        "strategy":{
+        "strategy": {
             "system": {
-                "prompts" :{
-                    "system" : "You are an expert AI scientist and focus on debugging and specifically on generating the idea and plan"
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on debugging and planning a fix."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is to create a implementation plan for improving.",
-                    "implementation": "## Current Implementation: {current_implementation}",
-                    "error": "## Error: {error}"
+                "prompts": {
+                    "task": "## Task: Create a debugging plan.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}"
                 },
-                "order" : ["task","implementation","error"]
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "reference"
+                ]
             }
         },
-        "feedback":{
+        "feedback": {
             "system": {
-                "prompts" :{
-                    "system":"You are an exper AI scientist and focus debugging and specifically on reviewing previous solutions and generating feedback"
+                "prompts": {
+                    "system": "You are an expert AI scientist reviewing a failed candidate and generating debugging feedback."
                 },
-                "order" : ["system"]
+                "order": [
+                    "system"
+                ]
             },
             "user": {
-                "prompts" : {
-                    "task" : "## Task: Your task is to improve the speed of the CUDA implementation",
-                    "implementation": "## Current Implementation: {current_implementation}",
-                    "error": "## Error: {error}",
-                    "reference" : "## Reference: Here is the reference implementation {reference}"
+                "prompts": {
+                    "task": "## Task: Explain the likely cause and what to fix next.",
+                    "implementation": "## Candidate Implementation:\n{new_implementation}",
+                    "error": "## Error:\n{error}",
+                    "result": "## Result:\n{result}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}"
                 },
-                "order" : ["task","implementation","error","reference"]
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "failure_stage",
+                    "hint",
+                    "result",
+                    "reference"
+                ]
             }
         }
-    }
+    },
+    "feedback_profile": "kernel",
+    "response_format": "code",
+    "artifact_extension": "py",
+    "score_key": "combined_score",
+    "feedback_strategy": "rules"
 }

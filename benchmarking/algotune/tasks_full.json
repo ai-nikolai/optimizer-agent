@@ -1,0 +1,1542 @@
+[
+  {
+    "name": "aes_gcm_encryption",
+    "n": 291598,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "cryptography",
+    "target_time_ms": 100
+  },
+  {
+    "name": "affine_transform_2d",
+    "n": 1123,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "aircraft_wing_design",
+    "n": 10,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "articulation_points",
+    "n": 837,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "base64_encoding",
+    "n": 48512,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "misc",
+    "target_time_ms": 100
+  },
+  {
+    "name": "battery_scheduling",
+    "n": 6,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "btsp",
+    "n": 14,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "capacitated_facility_location",
+    "n": 4,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "chacha_encryption",
+    "n": 197380,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "cryptography",
+    "target_time_ms": 100
+  },
+  {
+    "name": "channel_capacity",
+    "n": 162,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "chebyshev_center",
+    "n": 206,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "cholesky_factorization",
+    "n": 1660,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "clustering_outliers",
+    "n": 2457,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "communicability",
+    "n": 61,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "convex_hull",
+    "n": 267021,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "computational_geometry",
+    "target_time_ms": 100
+  },
+  {
+    "name": "convolve2d_full_fill",
+    "n": 6,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "convolve_1d",
+    "n": 72989,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "correlate2d_full_fill",
+    "n": 6,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "correlate_1d",
+    "n": 1504,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "count_connected_components",
+    "n": 1707,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "count_riemann_zeta_zeros",
+    "n": 15849,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "misc",
+    "target_time_ms": 100
+  },
+  {
+    "name": "cumulative_simpson_1d",
+    "n": 4443523,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "cumulative_simpson_multid",
+    "n": 423,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "cvar_projection",
+    "n": 9,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "cyclic_independent_set",
+    "n": 4,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "dct_type_I_scipy_fftpack",
+    "n": 1958,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "delaunay",
+    "n": 21339,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "computational_geometry",
+    "target_time_ms": 100
+  },
+  {
+    "name": "dijkstra_from_indices",
+    "n": 5271,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "discrete_log",
+    "n": 25,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "cryptography",
+    "target_time_ms": 100
+  },
+  {
+    "name": "dst_type_II_scipy_fftpack",
+    "n": 2054,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "dynamic_assortment_planning",
+    "n": 28,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "earth_movers_distance",
+    "n": 1151,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "edge_expansion",
+    "n": 4408,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "eigenvalues_complex",
+    "n": 474,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "eigenvalues_real",
+    "n": 875,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "eigenvectors_complex",
+    "n": 463,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "eigenvectors_real",
+    "n": 827,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "elementwise_integration",
+    "n": 372,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "feedback_controller_design",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "control",
+    "target_time_ms": 100
+  },
+  {
+    "name": "fft_cmplx_scipy_fftpack",
+    "n": 1860,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "fft_convolution",
+    "n": 542069,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "fft_real_scipy_fftpack",
+    "n": 2738,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "firls",
+    "n": 1113,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "generalized_eigenvalues_complex",
+    "n": 272,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "generalized_eigenvalues_real",
+    "n": 668,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "generalized_eigenvectors_complex",
+    "n": 269,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "generalized_eigenvectors_real",
+    "n": 574,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "graph_coloring_assign",
+    "n": 38,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "graph_global_efficiency",
+    "n": 507,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "graph_isomorphism",
+    "n": 131,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "graph_laplacian",
+    "n": 44505,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "group_lasso",
+    "n": 144,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "gzip_compression",
+    "n": 658,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "misc",
+    "target_time_ms": 100
+  },
+  {
+    "name": "integer_factorization",
+    "n": 4,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "cryptography",
+    "target_time_ms": 100
+  },
+  {
+    "name": "job_shop_scheduling",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "kalman_filter",
+    "n": 23,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "kcenters",
+    "n": 49,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "kd_tree",
+    "n": 198,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "computational_geometry",
+    "target_time_ms": 100
+  },
+  {
+    "name": "kernel_density_estimation",
+    "n": 300,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "kmeans",
+    "n": 278,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ks_test_2samp",
+    "n": 359188,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "l0_pruning",
+    "n": 695029,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "l1_pruning",
+    "n": 473085,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lasso",
+    "n": 398,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "least_squares",
+    "n": 102713,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "linear_system_solver",
+    "n": 1450,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lp_box",
+    "n": 210,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lp_centering",
+    "n": 215,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lp_mdp",
+    "n": 10,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lqr",
+    "n": 111,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "control",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lti_simulation",
+    "n": 24921,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "control",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lu_factorization",
+    "n": 1104,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "lyapunov_stability",
+    "n": 17,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "control",
+    "target_time_ms": 100
+  },
+  {
+    "name": "markowitz",
+    "n": 382,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "matrix_completion",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "matrix_exponential",
+    "n": 555,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "matrix_exponential_sparse",
+    "n": 318,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "matrix_multiplication",
+    "n": 790,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "matrix_sqrt",
+    "n": 281,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "max_clique_cpsat",
+    "n": 12,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "max_common_subgraph",
+    "n": 4,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "max_flow_min_cost",
+    "n": 64,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "max_independent_set_cpsat",
+    "n": 12,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "max_weighted_independent_set",
+    "n": 61,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "min_dominating_set",
+    "n": 9,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "min_weight_assignment",
+    "n": 756,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "minimum_spanning_tree",
+    "n": 571,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "minimum_volume_ellipsoid",
+    "n": 28,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "multi_dim_knapsack",
+    "n": 25,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "nmf",
+    "n": 7,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_brusselator",
+    "n": 199,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_fitzhughnagumo",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_hires",
+    "n": 370,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_hodgkinhuxley",
+    "n": 43,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_lorenz96_nonchaotic",
+    "n": 7856,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_lotkavolterra",
+    "n": 161,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_nbodyproblem",
+    "n": 8,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_seirs",
+    "n": 1971,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_stiff_robertson",
+    "n": 9999999,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "ode_stiff_vanderpol",
+    "n": 2,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "odr",
+    "n": 31132,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "optimal_advertising",
+    "n": 43,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "outer_product",
+    "n": 10630,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "pagerank",
+    "n": 4798,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "pca",
+    "n": 34,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "pde_burgers1d",
+    "n": 12,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "pde_heat1d",
+    "n": 8,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "differential_equation",
+    "target_time_ms": 100
+  },
+  {
+    "name": "polynomial_mixed",
+    "n": 415,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "polynomial_real",
+    "n": 396,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "power_control",
+    "n": 98,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "procrustes",
+    "n": 585,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "psd_cone_projection",
+    "n": 349,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "qp",
+    "n": 278,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "qr_factorization",
+    "n": 971,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "quantile_regression",
+    "n": 356,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "statistics",
+    "target_time_ms": 100
+  },
+  {
+    "name": "queens_with_obstacles",
+    "n": 9,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "queuing",
+    "n": 665036,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "qz_factorization",
+    "n": 272,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "randomized_svd",
+    "n": 776,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "rbf_interpolation",
+    "n": 68,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "rectanglepacking",
+    "n": 8,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "robust_kalman_filter",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "robust_linear_program",
+    "n": 12,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "rocket_landing_optimization",
+    "n": 102,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "rotate_2d",
+    "n": 1086,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "set_cover",
+    "n": 52,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "set_cover_conflicts",
+    "n": 36,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sha256_hashing",
+    "n": 183042,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "cryptography",
+    "target_time_ms": 100
+  },
+  {
+    "name": "shift_2d",
+    "n": 1047,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "shortest_path_dijkstra",
+    "n": 352,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sinkhorn",
+    "n": 1813,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sparse_eigenvectors_complex",
+    "n": 1294,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sparse_lowest_eigenvalues_posdef",
+    "n": 1341,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sparse_lowest_eigenvectors_posdef",
+    "n": 1341,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sparse_pca",
+    "n": 662,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "spectral_clustering",
+    "n": 8,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "graph",
+    "target_time_ms": 100
+  },
+  {
+    "name": "stable_matching",
+    "n": 1209,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "svd",
+    "n": 474,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "svm",
+    "n": 571,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "sylvester_solver",
+    "n": 207,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "tensor_completion_3d",
+    "n": 6,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "toeplitz_solver",
+    "n": 8588,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "tsp",
+    "n": 27,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "two_eigenvalues_around_0",
+    "n": 1123,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "matrix_operations",
+    "target_time_ms": 100
+  },
+  {
+    "name": "unit_simplex_projection",
+    "n": 982958,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "upfirdn1d",
+    "n": 2582,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  },
+  {
+    "name": "vector_quantization",
+    "n": 166,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "nonconvex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "vectorized_newton",
+    "n": 710026,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "numerical_methods",
+    "target_time_ms": 100
+  },
+  {
+    "name": "vehicle_routing",
+    "n": 9,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "vertex_cover",
+    "n": 15,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "discrete_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "voronoi_diagram",
+    "n": 8997,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "computational_geometry",
+    "target_time_ms": 100
+  },
+  {
+    "name": "wasserstein_dist",
+    "n": 64597,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "water_filling",
+    "n": 3865,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "convex_optimization",
+    "target_time_ms": 100
+  },
+  {
+    "name": "zoom_2d",
+    "n": 971,
+    "seeds": [
+      1,
+      2
+    ],
+    "category": "signal_processing",
+    "target_time_ms": 100
+  }
+]

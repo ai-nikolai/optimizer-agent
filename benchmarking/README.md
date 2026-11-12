@@ -1,0 +1,107 @@
+# Benchmarking
+
+Two benchmark harnesses for optimizer-agent:
+
+- `kernelbench/` — KernelBench / robust_kernelbench-style CUDA kernel optimization
+- `algotune/` — AlgoTune numerical-program optimization
+- `openevolve/` — OpenEvolve-only competitor baselines for AlgoTune and KernelBench
+
+Both use the same `optimizer-agent` loop and evaluator contract. Each benchmark
+owns its task-specific evaluator, prompt config and Slurm launcher.
+`COMPARISON.md` defines the sequential, advanced and OpenEvolve competitor
+settings.
+
+## KernelBench
+
+```bash
+sbatch benchmarking/kernelbench/run_slurm.sh
+```
+
+See `kernelbench/README.md` for levels, rounds, sharding and robust_kernelbench
+comparison details.
+
+To replay the 100-problem `automatic_knowledge_discovery` `kernel_eng2`
+experiments, use `benchmarking/kernelbench/akd/run_slurm.sh`; the dataset,
+prompts, feedback config and legacy evaluator are copied there. See
+`kernelbench/akd/README.md`.
+
+## AlgoTune
+
+Official sources:
+
+- GitHub: https://github.com/oripress/AlgoTune
+- HF dataset: https://huggingface.co/datasets/oripress/AlgoTune
+
+The official project already publishes the full AlgoTune dataset and task
+definitions, so we do **not** duplicate the 328 GB instance dataset. The local
+`dataset/` is a lightweight 8-task manifest used for quick runs; `dataset_full/`
+is the 154-task manifest built from the official size parameters encoded in the
+HF filenames.
+
+Prepare the curated set:
+
+```bash
+conda activate env_kb2
+python benchmarking/algotune/prepare_dataset.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+```
+
+Prepare the full 154-task set:
+
+```bash
+python benchmarking/algotune/prepare_full_manifest.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+python benchmarking/algotune/prepare_dataset.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --manifest benchmarking/algotune/tasks_full.json \
+  --output benchmarking/algotune/dataset_full
+```
+
+Upload the lightweight manifest to your own HF account if desired:
+
+```bash
+python benchmarking/algotune/prepare_dataset.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --manifest benchmarking/algotune/tasks_full.json \
+  --output benchmarking/algotune/dataset_full \
+  --push-to-hf your-name/AlgoTuneTasks
+```
+
+Run:
+
+```bash
+# smoke
+LIMIT=1 ROUNDS=1 sbatch benchmarking/algotune/run_slurm.sh
+
+# curated 8-task manifest
+sbatch benchmarking/algotune/run_slurm.sh
+
+# full 154-task manifest, 4 shards
+sbatch benchmarking/algotune/run_full_slurm.sh
+
+# more shards
+NUM_SHARDS=8 sbatch --array=0-7 benchmarking/algotune/run_full_slurm.sh
+```
+
+The official repo also provides named task lists in `task_lists.json`
+(`fast`, `medium`, `all`, `compute_heavy`, `graph_tasks`), but no top-K
+importance ranking. See `algotune/README.md` for details.
+
+Advanced AlgoTune setting (quality-diversity search):
+
+```bash
+ROUNDS=5 SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 \
+  USE_STRATEGY=1 USE_DEBUG=1 sbatch benchmarking/algotune/run_slurm.sh
+```
+
+OpenEvolve-only competitor:
+
+```bash
+sbatch benchmarking/openevolve/algotune/run_slurm.sh
+PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/openevolve/kernelbench/run_slurm.sh
+```
+
+Environment for the jobs:
+- `env_kb2` for optimizer-agent + AlgoTune evaluator
+- `env_vllm30` only for the vLLM server
+- `ALGOTUNE_ROOT` default: `/hx2-weka/home/nr1713/AlgoTune`

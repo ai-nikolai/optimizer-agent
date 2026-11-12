@@ -1,0 +1,131 @@
+{
+    "improve": {
+        "core": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert algorithm engineer. Write fast, correct Python. Return only complete runnable code in one fenced code block."
+                }
+            },
+            "user": {
+                "order": ["task", "task_description", "reference", "artifact", "result", "failure_stage", "strategy", "feedback"],
+                "prompts": {
+                    "task": "## Task\nOptimize the numerical implementation. Define `class Solver` with a `solve(self, problem, **kwargs)` method that returns exactly the same result as the reference implementation, but faster. You may use numpy/scipy/numba/etc. Do not change the output format. Do not import the official task class in your solution; implement the algorithm yourself.",
+                    "task_description": "## AlgoTune Task\n{task_description}",
+                    "reference": "## Reference Implementation\n{reference}",
+                    "artifact": "## Current Implementation\n{current_artifact}",
+                    "result": "## Previous Evaluation\n{result}",
+                    "failure_stage": "## Previous Failure Stage\n{failure_stage}",
+                    "strategy": "## Strategy\n{strategy}",
+                    "feedback": "## Feedback\n{feedback}"
+                }
+            }
+        },
+        "strategy": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert algorithm engineer. Propose a concise, concrete optimization plan."
+                }
+            },
+            "user": {
+                "order": ["task", "task_description", "reference", "artifact", "result", "failure_stage"],
+                "prompts": {
+                    "task": "## Task: Propose an algorithmic optimization plan.",
+                    "task_description": "## AlgoTune Task\n{task_description}",
+                    "reference": "## Reference Implementation\n{reference}",
+                    "artifact": "## Current Implementation\n{current_artifact}",
+                    "result": "## Previous Evaluation\n{result}",
+                    "failure_stage": "## Previous Failure Stage\n{failure_stage}"
+                }
+            }
+        },
+        "feedback": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert algorithm reviewer. Be concrete about correctness and the next optimization step."
+                }
+            },
+            "user": {
+                "order": ["task", "artifact", "result", "failure_stage", "hint", "error", "reference"],
+                "prompts": {
+                    "task": "## Task: Give concise feedback for the next attempt.",
+                    "artifact": "## Candidate Implementation\n{new_artifact}",
+                    "result": "## Evaluation\n{result}",
+                    "failure_stage": "## Failure Stage\n{failure_stage}",
+                    "hint": "## Automatic Diagnosis\n{feedback_hint}",
+                    "error": "## Error\n{error}",
+                    "reference": "## Reference Implementation\n{reference}"
+                }
+            }
+        }
+    },
+    "debug": {
+        "core": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert Python debugger. Fix the Solver implementation. Return only complete runnable code."
+                }
+            },
+            "user": {
+                "order": ["task", "task_description", "reference", "artifact", "error", "failure_stage", "result", "feedback"],
+                "prompts": {
+                    "task": "## Task\nDebug the current implementation. Keep `class Solver` and its `solve` method. Fix the failure before optimizing.",
+                    "task_description": "## AlgoTune Task\n{task_description}",
+                    "reference": "## Reference Implementation\n{reference}",
+                    "artifact": "## Current Implementation\n{current_artifact}",
+                    "error": "## Error\n{error}",
+                    "failure_stage": "## Failure Stage\n{failure_stage}",
+                    "result": "## Evaluation\n{result}",
+                    "feedback": "## Feedback\n{feedback}"
+                }
+            }
+        },
+        "strategy": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert Python debugger. Propose a short fix plan."
+                }
+            },
+            "user": {
+                "order": ["task", "artifact", "error", "failure_stage", "reference"],
+                "prompts": {
+                    "task": "## Task: Propose a debugging plan.",
+                    "artifact": "## Current Implementation\n{current_artifact}",
+                    "error": "## Error\n{error}",
+                    "failure_stage": "## Failure Stage\n{failure_stage}",
+                    "reference": "## Reference Implementation\n{reference}"
+                }
+            }
+        },
+        "feedback": {
+            "system": {
+                "order": ["system"],
+                "prompts": {
+                    "system": "You are an expert Python debugger. Explain the likely cause and the fix."
+                }
+            },
+            "user": {
+                "order": ["task", "artifact", "error", "failure_stage", "hint", "result", "reference"],
+                "prompts": {
+                    "task": "## Task: Give concise debugging feedback.",
+                    "artifact": "## Candidate Implementation\n{new_artifact}",
+                    "error": "## Error\n{error}",
+                    "failure_stage": "## Failure Stage\n{failure_stage}",
+                    "hint": "## Automatic Diagnosis\n{feedback_hint}",
+                    "result": "## Evaluation\n{result}",
+                    "reference": "## Reference Implementation\n{reference}"
+                }
+            }
+        }
+    },
+    "feedback_strategy": "rules",
+    "feedback_profile": "generic",
+    "response_format": "code",
+    "artifact_extension": "py",
+    "score_key": "combined_score",
+    "predecessor_selection_method": "bestN_last"
+}

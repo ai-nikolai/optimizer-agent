@@ -5,11 +5,10 @@ optimizer-agent \
     --prompt-config-file ./examples/test_example/prompt_config.json \
     --num-iterations 2 \
     --num-map-elites 3 \
-    --num-islands 2 \
     --use-feedback \
     --use-strategy \
     --predecessor-selection-method map_elites \
     --test
 
-# ", type=str, default="bestN_last", help="Selection Algorithm", choices=["bestN_last","bestN_all","map_elites"]
+# Selection choices: bestN_last, bestN_all, map_elites
 # optimizer-agent --baseline baseline.py --evaluate evaluate.py

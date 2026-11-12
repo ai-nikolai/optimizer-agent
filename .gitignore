@@ -16,3 +16,12 @@ dist/
 CURRENT_*.md
 .mini/
 last_session.json
+# job outputs
+/experiments/
+/logs/*
+!/logs/.gitkeep
+
+# generated OpenEvolve task dirs and outputs
+benchmarking/openevolve/algotune/tasks/
+benchmarking/openevolve/kernelbench/tasks/
+benchmarking/openevolve/*/openevolve_output/

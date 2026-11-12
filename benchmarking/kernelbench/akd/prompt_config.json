@@ -1,0 +1,183 @@
+{
+    "improve": {
+        "core": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert CUDA kernel engineer. Return complete, runnable Python code in one fenced code block."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Optimize the CUDA implementation while preserving the reference behaviour. Return the complete Python file.",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "result": "## Result of the current implementation:\n{result}",
+                    "strategy": "## Strategy:\n{strategy}",
+                    "feedback": "## Feedback:\n{feedback}",
+                    "failure_stage": "## Previous failure stage:\n{failure_stage}"
+                },
+                "order": [
+                    "task",
+                    "reference",
+                    "implementation",
+                    "result",
+                    "failure_stage",
+                    "strategy",
+                    "feedback"
+                ]
+            }
+        },
+        "strategy": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on generating the idea and plan."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Create an implementation plan for improving the code.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "result": "## Current result:\n{result}",
+                    "reference": "## Reference Implementation:\n{reference}"
+                },
+                "order": [
+                    "task",
+                    "implementation",
+                    "result",
+                    "reference"
+                ]
+            }
+        },
+        "feedback": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert AI scientist reviewing a candidate and generating feedback."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Provide concise feedback for the next attempt.",
+                    "implementation": "## Candidate Implementation:\n{new_implementation}",
+                    "result": "## Result:\n{result}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}"
+                },
+                "order": [
+                    "task",
+                    "implementation",
+                    "result",
+                    "failure_stage",
+                    "hint",
+                    "error",
+                    "reference"
+                ]
+            }
+        }
+    },
+    "debug": {
+        "core": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on debugging. Return the complete fixed code in one fenced code block."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Debug the current implementation so it runs successfully.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "result": "## Result:\n{result}",
+                    "strategy": "## Strategy:\n{strategy}",
+                    "feedback": "## Feedback:\n{feedback}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}"
+                },
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "failure_stage",
+                    "reference",
+                    "result",
+                    "strategy",
+                    "feedback"
+                ]
+            }
+        },
+        "strategy": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert AI scientist focused on debugging and planning a fix."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Create a debugging plan.",
+                    "implementation": "## Current Implementation:\n{current_implementation}",
+                    "error": "## Error:\n{error}",
+                    "reference": "## Reference Implementation:\n{reference}"
+                },
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "reference"
+                ]
+            }
+        },
+        "feedback": {
+            "system": {
+                "prompts": {
+                    "system": "You are an expert AI scientist reviewing a failed candidate and generating debugging feedback."
+                },
+                "order": [
+                    "system"
+                ]
+            },
+            "user": {
+                "prompts": {
+                    "task": "## Task: Explain the likely cause and what to fix next.",
+                    "implementation": "## Candidate Implementation:\n{new_implementation}",
+                    "error": "## Error:\n{error}",
+                    "result": "## Result:\n{result}",
+                    "reference": "## Reference Implementation:\n{reference}",
+                    "failure_stage": "## Failure stage:\n{failure_stage}",
+                    "hint": "## Automatic diagnosis:\n{feedback_hint}"
+                },
+                "order": [
+                    "task",
+                    "implementation",
+                    "error",
+                    "failure_stage",
+                    "hint",
+                    "result",
+                    "reference"
+                ]
+            }
+        }
+    },
+    "feedback_profile": "kernel",
+    "response_format": "code",
+    "artifact_extension": "py",
+    "score_key": "combined_score",
+    "feedback_strategy": "rules",
+    "predecessor_selection_method": "bestN_last",
+    "task_description": "Kernel engineering: replace the baseline CUDA implementation with a faster, correct ModelNew. Preserve the reference behaviour and use CUDA kernels via torch.utils.cpp_extension.load_inline."
+}

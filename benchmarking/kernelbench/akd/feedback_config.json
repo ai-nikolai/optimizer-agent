@@ -1,0 +1,10 @@
+{
+    "strategy": "rules_llm",
+    "profile": "kernel",
+    "metric": {
+        "score_key": "runtime_custom_ms",
+        "baseline_key": "runtime_original_ms",
+        "higher_is_better": false,
+        "metric_name": "runtime (ms)"
+    }
+}

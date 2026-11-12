@@ -1,0 +1,10 @@
+{
+    "strategy": "rules_llm",
+    "profile": "generic",
+    "metric": {
+        "score_key": "combined_score",
+        "baseline_key": "baseline_score",
+        "higher_is_better": true,
+        "metric_name": "speedup"
+    }
+}

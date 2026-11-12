@@ -1,0 +1,17 @@
+{
+    "strategy": "rules_llm",
+    "profile": "kernel",
+    "hints": {
+        "compile_error": "The CUDA extension did not compile. Fix the compiler error before optimizing.{detail}",
+        "runtime_error": "The CUDA extension compiled but failed to load/run. Fix the runtime error first.{detail}",
+        "incorrect": "The kernel ran but produced the wrong output. Restore correctness first.{detail}",
+        "invalid": "The kernel was rejected. Fix the reported issue first.{detail}",
+        "improve": "Correct. Improve the measured runtime without changing behaviour. {metric_summary}"
+    },
+    "metric": {
+        "score_key": "runtime_custom_ms",
+        "baseline_key": "runtime_original_ms",
+        "higher_is_better": false,
+        "metric_name": "runtime (ms)"
+    }
+}

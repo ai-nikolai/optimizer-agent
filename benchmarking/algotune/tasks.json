@@ -1,0 +1,50 @@
+[
+  {
+    "name": "affine_transform_2d",
+    "n": 1024,
+    "seeds": [1, 2],
+    "category": "signal_processing"
+  },
+  {
+    "name": "convolve2d_full_fill",
+    "n": 6,
+    "seeds": [1, 2],
+    "category": "signal_processing"
+  },
+  {
+    "name": "eigenvectors_complex",
+    "n": 512,
+    "seeds": [1, 2],
+    "category": "matrix_operations"
+  },
+  {
+    "name": "fft_cmplx_scipy_fftpack",
+    "n": 2048,
+    "seeds": [1, 2],
+    "category": "signal_processing"
+  },
+  {
+    "name": "fft_convolution",
+    "n": 8192,
+    "seeds": [1, 2],
+    "category": "signal_processing"
+  },
+  {
+    "name": "lu_factorization",
+    "n": 1024,
+    "seeds": [1, 2],
+    "category": "matrix_operations"
+  },
+  {
+    "name": "polynomial_real",
+    "n": 200,
+    "seeds": [1, 2],
+    "category": "numerical_methods"
+  },
+  {
+    "name": "psd_cone_projection",
+    "n": 256,
+    "seeds": [1, 2],
+    "category": "convex_optimization"
+  }
+]
