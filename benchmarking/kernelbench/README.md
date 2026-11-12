@@ -23,8 +23,38 @@ optimizer-agent:
 - `prompt_config.json` — KernelBench instructions, `ModelNew`/`load_inline`
   output format, and the repair-feedback slot.
 - `run_level.py` — loads a KernelBench level, writes each problem to a file, and
-  runs one `Agent` per problem with `bestN_last` and `num_samples=1`.
+  runs one `Agent` per problem with `bestN_last` and `num_samples=1`. With
+  `--dataset-dir` it instead iterates a flat `<id>_baseline.py` /
+  `<id>_reference.py` dataset (the AKD replay mode).
 - `../feedback/kernel_rules_llm.json` — kernel profile + `rules_llm` feedback.
+- `akd/` — self-contained replay of the `automatic_knowledge_discovery`
+  `kernel_eng2` experiment: 100-problem dataset, AKD prompt/feedback configs,
+  legacy evaluator, and a 3-GPU Slurm launcher. See `akd/README.md`.
+
+## AKD `kernel_eng2` replay
+
+The copy in `akd/` makes the running AKD experiments reproducible from this
+branch:
+
+```bash
+# robust replication (bestN_last)
+EXPERIMENT_NAME=experiment_v5_0_robust_kb_optagent_replay \
+  sbatch benchmarking/kernelbench/akd/run_slurm.sh
+
+# new settings (map_elites/dynamic/3 + strategy)
+EXPERIMENT_NAME=experiment_v5_0_newsettings_optagent_replay \
+SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 USE_STRATEGY=1 \
+  sbatch benchmarking/kernelbench/akd/run_slurm.sh
+```
+
+The AKD launcher uses `akd/evaluate_legacy.py` by default to match the in-flight
+runs. Pass `EVALUATE=benchmarking/kernelbench/evaluate.py` to use the hardened
+evaluator instead.
+
+All launchers request scratch (`--gres=...,scratch:...`) and export
+`TMPDIR`, `TORCH_EXTENSIONS_DIR`, `TRITON_CACHE_DIR`,
+`TORCHINDUCTOR_CACHE_DIR`, `XDG_CACHE_HOME` and `HF_DATASETS_CACHE` into it.
+Only experiment results and logs stay in home.
 
 ## Exact command (server already running)
 

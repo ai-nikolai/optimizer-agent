@@ -5,7 +5,7 @@
 #SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_kb_%j.err
 #SBATCH --time=04:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:2,scratch:100g
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
@@ -25,6 +25,15 @@ set -uo pipefail
 REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
 ROBUST_KB="/hx2-weka/home/nr1713/robust_kernelbench"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
+SCRATCH="${TMPDIR:-/tmp}/optagent_kb_${JOB_ID}"
+mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets" "${SCRATCH}/kb_builds"
+export TMPDIR="${SCRATCH}/tmp"
+export TORCH_EXTENSIONS_DIR="${SCRATCH}/torch_extensions"
+export TRITON_CACHE_DIR="${SCRATCH}/triton"
+export TORCHINDUCTOR_CACHE_DIR="${SCRATCH}/torchinductor"
+export XDG_CACHE_HOME="${SCRATCH}/xdg"
+export HF_DATASETS_CACHE="${SCRATCH}/hf_datasets"
+export KB_BUILD_ROOT="${SCRATCH}/kb_builds"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
 GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
@@ -35,7 +44,43 @@ ROUNDS="${ROUNDS:-3}"
 LIMIT="${LIMIT-5}"
 SHARD_INDEX="${SHARD_INDEX:-0}"
 NUM_SHARDS="${NUM_SHARDS:-1}"
-EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_kb_level${LEVEL}_${JOB_ID}}"
+
+# AKD dataset mode: set DATASET_DIR to the flat <id>_baseline.py /
+# <id>_reference.py dataset (benchmarking/kernelbench/akd/dataset) to replay
+# the kernel_eng2 experiments. Leave empty for KernelBench levels.
+DATASET_DIR="${DATASET_DIR:-}"
+PROBLEM_START="${PROBLEM_START:-1}"
+PROBLEM_END="${PROBLEM_END:-100}"
+NUM_SAMPLES="${NUM_SAMPLES:-1}"
+MAX_CANDIDATES="${MAX_CANDIDATES:-20}"
+SELECTION="${SELECTION:-}"
+MAP_ELITES_METHOD="${MAP_ELITES_METHOD:-}"
+NUM_MAP_ELITES="${NUM_MAP_ELITES:-}"
+USE_STRATEGY="${USE_STRATEGY:-0}"
+USE_DEBUG="${USE_DEBUG:-}"
+DEBUG_ITERATIONS="${DEBUG_ITERATIONS:-1}"
+FEEDBACK_STRATEGY="${FEEDBACK_STRATEGY:-rules_llm}"
+FEEDBACK_PROFILE="${FEEDBACK_PROFILE:-kernel}"
+DIFF_BASED="${DIFF_BASED:-0}"
+DIFF_MODE="${DIFF_MODE:-unified-diff}"
+
+if [ -n "${DATASET_DIR}" ]; then
+    DEFAULT_PROMPT_CONFIG="benchmarking/kernelbench/akd/prompt_config.json"
+    DEFAULT_FEEDBACK_CONFIG="benchmarking/kernelbench/akd/feedback_config.json"
+    DEFAULT_EVALUATE="benchmarking/kernelbench/evaluate.py"
+    EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_akd_${JOB_ID}}"
+    : "${USE_DEBUG:=1}"
+    echo "=== AKD dataset mode: ${DATASET_DIR} problems ${PROBLEM_START}..${PROBLEM_END}"
+else
+    DEFAULT_PROMPT_CONFIG="benchmarking/kernelbench/prompt_config.json"
+    DEFAULT_FEEDBACK_CONFIG="examples/feedback/kernel_rules_llm.json"
+    DEFAULT_EVALUATE="benchmarking/kernelbench/evaluate.py"
+    EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_kb_level${LEVEL}_${JOB_ID}}"
+    : "${USE_DEBUG:=0}"
+fi
+PROMPT_CONFIG="${PROMPT_CONFIG:-${DEFAULT_PROMPT_CONFIG}}"
+FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${DEFAULT_FEEDBACK_CONFIG}}"
+EVALUATE="${EVALUATE:-${DEFAULT_EVALUATE}}"
 
 cd "${REPO}"
 mkdir -p logs experiments
@@ -100,23 +145,37 @@ export KB_NUM_PERF_TRIALS="${KB_NUM_PERF_TRIALS:-3}"
 export KB_FLUSH_L2="${KB_FLUSH_L2:-1}"
 
 EXTRA=()
-if [ -n "${LIMIT}" ]; then
-    EXTRA+=(--limit "${LIMIT}")
+if [ -n "${DATASET_DIR}" ]; then
+    EXTRA+=(--dataset-dir "${DATASET_DIR}" --problem-start "${PROBLEM_START}" --problem-end "${PROBLEM_END}")
+else
+    if [ -n "${LIMIT}" ]; then
+        EXTRA+=(--limit "${LIMIT}")
+    fi
 fi
+if [ -n "${SELECTION}" ]; then EXTRA+=(--predecessor-selection-method "${SELECTION}"); fi
+if [ -n "${MAP_ELITES_METHOD}" ]; then EXTRA+=(--map-elites-method "${MAP_ELITES_METHOD}"); fi
+if [ -n "${NUM_MAP_ELITES}" ]; then EXTRA+=(--num-map-elites "${NUM_MAP_ELITES}"); fi
+if [ "${USE_STRATEGY}" = "1" ]; then EXTRA+=(--use-strategy); fi
+if [ "${USE_DEBUG}" = "1" ]; then EXTRA+=(--use-debug --num-debug-iterations "${DEBUG_ITERATIONS}"); fi
+if [ "${DIFF_BASED}" = "1" ]; then EXTRA+=(--diff-based --diff-mode "${DIFF_MODE}"); fi
 
 echo "=== optimizer-agent KernelBench level ${LEVEL}, rounds ${ROUNDS}, limit '${LIMIT}' at $(date +%T)"
 python benchmarking/kernelbench/run_level.py \
     --level "${LEVEL}" \
     --rounds "${ROUNDS}" \
+    --num-samples "${NUM_SAMPLES}" \
+    --max-candidates "${MAX_CANDIDATES}" \
     "${EXTRA[@]+"${EXTRA[@]}"}" \
     --shard-index "${SHARD_INDEX}" \
     --num-shards "${NUM_SHARDS}" \
     --model-url "http://localhost:${PORT}" \
     --model-name "${MODEL_NAME}" \
     --model-params "{\"temperature\": 0.2, \"max_tokens\": ${MAX_TOKENS}}" \
-    --prompt-config benchmarking/kernelbench/prompt_config.json \
-    --feedback-config examples/feedback/kernel_rules_llm.json \
-    --evaluate benchmarking/kernelbench/evaluate.py \
+    --prompt-config "${PROMPT_CONFIG}" \
+    --feedback-config "${FEEDBACK_CONFIG}" \
+    --feedback-strategy "${FEEDBACK_STRATEGY}" \
+    --feedback-profile "${FEEDBACK_PROFILE}" \
+    --evaluate "${EVALUATE}" \
     --experiments-dir "${EXPERIMENT_DIR}"
 RC=$?
 echo "=== optimizer-agent KernelBench rc=${RC} at $(date +%T)"

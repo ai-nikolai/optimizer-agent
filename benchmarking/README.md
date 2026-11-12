@@ -17,6 +17,11 @@ sbatch benchmarking/kernelbench/run_slurm.sh
 See `kernelbench/README.md` for levels, rounds, sharding and robust_kernelbench
 comparison details.
 
+To replay the 100-problem `automatic_knowledge_discovery` `kernel_eng2`
+experiments, use `benchmarking/kernelbench/akd/run_slurm.sh`; the dataset,
+prompts, feedback config and legacy evaluator are copied there. See
+`kernelbench/akd/README.md`.
+
 ## AlgoTune
 
 Official sources:

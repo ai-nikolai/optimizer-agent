@@ -20,6 +20,7 @@ not need evaluator-specific flags):
 """
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -78,6 +79,13 @@ def main():
     solution_path = Path(args.solution).resolve()
     reference_path = Path(args.reference).resolve()
     workdir = solution_path.parent
+    build_root = os.environ.get("KB_BUILD_ROOT")
+    if build_root:
+        key = hashlib.sha1(str(solution_path).encode("utf-8")).hexdigest()[:12]
+        build_root = Path(build_root) / key
+        build_root.mkdir(parents=True, exist_ok=True)
+    else:
+        build_root = workdir
 
     result = {
         "combined_score": float("-inf"),
@@ -109,8 +117,8 @@ def main():
                 num_perf_trials=_env_int("KB_NUM_PERF_TRIALS", 3),
                 verbose=False,
                 measure_performance=True,
-                build_dir=str(workdir / "kb_build_ref"),
-                build_dir_new=str(workdir / "kb_build_new"),
+                build_dir=str(build_root / "kb_build_ref"),
+                build_dir_new=str(build_root / "kb_build_new"),
                 device=torch.device("cuda:0"),
                 atol=_env_float("KB_ATOL"),
                 rtol=_env_float("KB_RTOL"),

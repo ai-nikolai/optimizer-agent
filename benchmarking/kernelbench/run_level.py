@@ -65,6 +65,25 @@ def parse_args():
     parser.add_argument("--filter", action="store_true", help="KernelBench representative subset")
     parser.add_argument("--baseline-dir", type=str, default=str(REPO_ROOT / "problems"))
     parser.add_argument(
+        "--dataset-dir",
+        type=str,
+        default=None,
+        help=(
+            "Use a flat AKD-style dataset instead of a KernelBench level: "
+            "expects <id>_baseline.py and <id>_reference.py."
+        ),
+    )
+    parser.add_argument("--problem-start", type=int, default=1)
+    parser.add_argument("--problem-end", type=int, default=100)
+    parser.add_argument("--num-samples", type=int, default=1)
+    parser.add_argument("--num-map-elites", type=int, default=None)
+    parser.add_argument(
+        "--map-elites-method",
+        type=str,
+        default=None,
+        choices=["cluster", "fixed", "dynamic"],
+    )
+    parser.add_argument(
         "--experiments-dir", type=str, default=str(REPO_ROOT / "experiments/opt_agent_kb")
     )
     parser.add_argument("--prompt-config", type=str, default=str(HERE / "prompt_config.json"))
@@ -121,18 +140,45 @@ def parse_args():
 
 def main():
     args = parse_args()
-    from robust_kernelbench.inference_common import load_dataset_for_level
 
-    dataset = load_dataset_for_level(args.level, use_filter=args.filter)
-    rows = list(dataset)
-    if args.num_shards > 1:
-        rows = rows[args.shard_index :: args.num_shards]
-    rows = rows[args.start :]
-    if args.limit is not None:
-        rows = rows[: args.limit]
+    if args.dataset_dir:
+        dataset_dir = Path(args.dataset_dir).resolve()
+        rows = []
+        for pid in range(args.problem_start, args.problem_end + 1):
+            baseline = dataset_dir / f"{pid}_baseline.py"
+            reference = dataset_dir / f"{pid}_reference.py"
+            if baseline.exists() and reference.exists():
+                rows.append(
+                    {
+                        "problem_id": pid,
+                        "name": f"problem_{pid}",
+                        "baseline": str(baseline),
+                        "reference": str(reference),
+                    }
+                )
+            else:
+                print(f"skipping pid={pid}: missing dataset files", flush=True)
+        if args.num_shards > 1:
+            rows = rows[args.shard_index :: args.num_shards]
+        baseline_dir = None
+        run_prefix = "problem"
+        source_desc = f"dataset {dataset_dir}"
+    else:
+        from robust_kernelbench.inference_common import load_dataset_for_level
 
-    baseline_dir = Path(args.baseline_dir) / f"level_{args.level}"
-    baseline_dir.mkdir(parents=True, exist_ok=True)
+        dataset = load_dataset_for_level(args.level, use_filter=args.filter)
+        rows = list(dataset)
+        if args.num_shards > 1:
+            rows = rows[args.shard_index :: args.num_shards]
+        rows = rows[args.start :]
+        if args.limit is not None:
+            rows = rows[: args.limit]
+
+        baseline_dir = Path(args.baseline_dir) / f"level_{args.level}"
+        baseline_dir.mkdir(parents=True, exist_ok=True)
+        run_prefix = f"level_{args.level}"
+        source_desc = f"KernelBench level {args.level}"
+
     experiments_dir = Path(args.experiments_dir)
     experiments_dir.mkdir(parents=True, exist_ok=True)
 
@@ -155,20 +201,28 @@ def main():
         for index, row in enumerate(rows):
             problem_id = row.get("problem_id")
             name = row.get("name") or f"problem_{problem_id}"
-            run_dir = experiments_dir / f"level_{args.level}_pid_{problem_id}"
+            run_dir = experiments_dir / f"{run_prefix}_pid_{problem_id}"
             print(
-                f"[{index + 1}/{len(rows)}] pid={problem_id} name={name} -> {run_dir}",
+                f"[{index + 1}/{len(rows)}] pid={problem_id} name={name} "
+                f"({source_desc}) -> {run_dir}",
                 flush=True,
             )
             try:
-                problem_path = baseline_dir / f"{problem_id}_{_slug(name)}.py"
-                problem_path.write_text(row["code"])
+                if args.dataset_dir:
+                    problem_path = Path(row["baseline"])
+                    reference_path = Path(row["reference"])
+                else:
+                    problem_path = baseline_dir / f"{problem_id}_{_slug(name)}.py"
+                    problem_path.write_text(row["code"])
+                    reference_path = problem_path
 
                 agent = Agent(
                     num_iterations=args.rounds,
-                    num_samples=1,
+                    num_samples=args.num_samples,
                     # bestN_last + num_samples=1 repairs the previous round.
                     predecessor_selection_method=args.predecessor_selection_method,
+                    num_map_elites=args.num_map_elites,
+                    map_elites_method=args.map_elites_method,
                     max_candidates=args.max_candidates,
                     minimize=args.minimize,
                     diff_based=args.diff_based,
@@ -191,7 +245,7 @@ def main():
                 history = agent.run(
                     baseline=str(problem_path),
                     evaluate=args.evaluate,
-                    reference=str(problem_path),
+                    reference=str(reference_path),
                     experiments_dir=str(run_dir),
                 )
                 best = (
