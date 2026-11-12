@@ -77,3 +77,11 @@ python analysis/interactive.py \
   `summary.json` files.
 - `combined_score` is evaluator-defined: the legacy kernel evaluator emits a
   negative runtime, while the hardened KernelBench evaluator emits a speedup.
+
+## Token accounting
+
+`collect_results.py` writes `prompt_tokens`, `completion_tokens`,
+`total_tokens` and `llm_calls` into the raw and per-iteration summary CSVs, and
+a per-method total to `experiment_results_tokens_<version>.csv`. These columns
+come from `token_usage` entries in optimizer-agent `summary.json` history.
+`interactive.py` exposes them as additional metrics.
