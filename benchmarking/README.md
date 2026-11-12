@@ -31,10 +31,11 @@ Official sources:
 
 The official project already publishes the full AlgoTune dataset and task
 definitions, so we do **not** duplicate the 328 GB instance dataset. The local
-`dataset/` is a lightweight task manifest used by optimizer-agent; it contains
-task descriptions, reference source, and an unoptimized baseline `Solver`.
+`dataset/` is a lightweight 8-task manifest used for quick runs; `dataset_full/`
+is the 154-task manifest built from the official size parameters encoded in the
+HF filenames.
 
-Prepare it from an official AlgoTune checkout:
+Prepare the curated set:
 
 ```bash
 conda activate env_kb2
@@ -42,11 +43,24 @@ python benchmarking/algotune/prepare_dataset.py \
   --algotune-root /hx2-weka/home/nr1713/AlgoTune
 ```
 
+Prepare the full 154-task set:
+
+```bash
+python benchmarking/algotune/prepare_full_manifest.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+python benchmarking/algotune/prepare_dataset.py \
+  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --manifest benchmarking/algotune/tasks_full.json \
+  --output benchmarking/algotune/dataset_full
+```
+
 Upload the lightweight manifest to your own HF account if desired:
 
 ```bash
 python benchmarking/algotune/prepare_dataset.py \
   --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --manifest benchmarking/algotune/tasks_full.json \
+  --output benchmarking/algotune/dataset_full \
   --push-to-hf your-name/AlgoTuneTasks
 ```
 
@@ -56,9 +70,19 @@ Run:
 # smoke
 LIMIT=1 ROUNDS=1 sbatch benchmarking/algotune/run_slurm.sh
 
-# full manifest
+# curated 8-task manifest
 sbatch benchmarking/algotune/run_slurm.sh
+
+# full 154-task manifest, 4 shards
+sbatch benchmarking/algotune/run_full_slurm.sh
+
+# more shards
+NUM_SHARDS=8 sbatch --array=0-7 benchmarking/algotune/run_full_slurm.sh
 ```
+
+The official repo also provides named task lists in `task_lists.json`
+(`fast`, `medium`, `all`, `compute_heavy`, `graph_tasks`), but no top-K
+importance ranking. See `algotune/README.md` for details.
 
 Environment for the jobs:
 - `env_kb2` for optimizer-agent + AlgoTune evaluator

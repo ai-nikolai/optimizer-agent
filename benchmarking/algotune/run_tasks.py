@@ -25,7 +25,17 @@ DEFAULT_ALGOTUNE_ROOT = os.environ.get(
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", default=str(HERE / "dataset/manifest.json"))
+    parser.add_argument(
+        "--dataset-root",
+        default=str(HERE / "dataset"),
+        help="Directory containing tasks/<task>/{description,baseline,reference}.",
+    )
     parser.add_argument("--tasks", default=None, help="Comma-separated task names")
+    parser.add_argument(
+        "--task-list",
+        default=None,
+        help="Named official list from task_lists.json (fast, medium, all, ...).",
+    )
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--rounds", type=int, default=5)
@@ -76,10 +86,20 @@ def main():
     if args.tasks:
         wanted = {name.strip() for name in args.tasks.split(",") if name.strip()}
         manifest = [row for row in manifest if row["task"] in wanted]
+    if args.task_list:
+        lists = json.loads((HERE / "task_lists.json").read_text())
+        if args.task_list not in lists:
+            raise SystemExit(
+                f"unknown task list '{args.task_list}'; "
+                f"available: {', '.join(sorted(lists))}"
+            )
+        wanted = set(lists[args.task_list])
+        manifest = [row for row in manifest if row["task"] in wanted]
     manifest = manifest[args.start :]
     if args.limit is not None:
         manifest = manifest[: args.limit]
 
+    dataset_root = Path(args.dataset_root)
     experiments_dir = Path(args.experiments_dir)
     experiments_dir.mkdir(parents=True, exist_ok=True)
     csv_path = Path(args.results_csv) if args.results_csv else experiments_dir / "results.csv"
@@ -103,7 +123,7 @@ def main():
 
         for index, row in enumerate(manifest, 1):
             name = row["task"]
-            task_dir = HERE / "dataset" / "tasks" / name
+            task_dir = dataset_root / "tasks" / name
             baseline = task_dir / "baseline.py"
             reference = task_dir / "reference.txt"
             description = (task_dir / "description.txt").read_text()

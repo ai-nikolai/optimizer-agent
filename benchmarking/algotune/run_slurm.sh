@@ -22,22 +22,32 @@ set -uo pipefail
 REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
 ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-/hx2-weka/home/nr1713/AlgoTune}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
+if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
+    JOB_ID="${JOB_ID}_a${SLURM_ARRAY_TASK_ID}"
+fi
 SCRATCH="${TMPDIR:-/tmp}/optagent_algotune_${JOB_ID}"
-mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets" "${SCRATCH}/kb_builds"
+mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets" "${SCRATCH}/hf_home" "${SCRATCH}/numba" "${SCRATCH}/mpl"
 export TMPDIR="${SCRATCH}/tmp"
 export TORCH_EXTENSIONS_DIR="${SCRATCH}/torch_extensions"
 export TRITON_CACHE_DIR="${SCRATCH}/triton"
 export TORCHINDUCTOR_CACHE_DIR="${SCRATCH}/torchinductor"
 export XDG_CACHE_HOME="${SCRATCH}/xdg"
 export HF_DATASETS_CACHE="${SCRATCH}/hf_datasets"
+export HF_HOME="${SCRATCH}/hf_home"
+export NUMBA_CACHE_DIR="${SCRATCH}/numba"
+export MPLCONFIGDIR="${SCRATCH}/mpl"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
 GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
 ROUNDS="${ROUNDS:-5}"
+START="${START:-0}"
 LIMIT="${LIMIT:-}"
 TASKS="${TASKS:-}"
+TASK_LIST="${TASK_LIST:-}"
+MANIFEST="${MANIFEST:-${REPO}/benchmarking/algotune/dataset/manifest.json}"
+DATASET_ROOT="${DATASET_ROOT:-${REPO}/benchmarking/algotune/dataset}"
 EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/algotune_v1_${JOB_ID}}"
 
 cd "${REPO}"
@@ -104,9 +114,13 @@ export ALGOTUNE_SOLVE_TIMEOUT="${ALGOTUNE_SOLVE_TIMEOUT:-120}"
 EXTRA=()
 if [ -n "${LIMIT}" ]; then EXTRA+=(--limit "${LIMIT}"); fi
 if [ -n "${TASKS}" ]; then EXTRA+=(--tasks "${TASKS}"); fi
+if [ -n "${TASK_LIST}" ]; then EXTRA+=(--task-list "${TASK_LIST}"); fi
+EXTRA+=(--start "${START}")
 
 echo "=== optimizer-agent AlgoTune at $(date +%T)"
 python benchmarking/algotune/run_tasks.py \
+    --manifest "${MANIFEST}" \
+    --dataset-root "${DATASET_ROOT}" \
     --rounds "${ROUNDS}" \
     "${EXTRA[@]+"${EXTRA[@]}"}" \
     --algotune-root "${ALGOTUNE_ROOT}" \
