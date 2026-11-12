@@ -56,6 +56,10 @@ def parse_args():
     parser.add_argument("--feedback-profile", default="generic")
     parser.add_argument("--use-strategy", action="store_true", default=None)
     parser.add_argument("--use-debug", action="store_true", default=None)
+    parser.add_argument("--diff-based", action="store_true", default=None)
+    parser.add_argument(
+        "--diff-mode", default=None, choices=["unified-diff", "json"]
+    )
     parser.add_argument("--num-debug-iterations", type=int, default=1)
     parser.add_argument("--algotune-root", default=DEFAULT_ALGOTUNE_ROOT)
     parser.add_argument("--experiments-dir", default=str(REPO_ROOT / "experiments/algotune"))
@@ -170,6 +174,8 @@ def main():
                     use_strategy=args.use_strategy,
                     use_debug=args.use_debug,
                     num_debug_iterations=args.num_debug_iterations,
+                    diff_based=args.diff_based,
+                    diff_mode=args.diff_mode,
                     resume=args.resume,
                     overwrite=args.overwrite,
                     test=args.test,

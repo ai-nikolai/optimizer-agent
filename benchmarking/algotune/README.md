@@ -149,6 +149,29 @@ ALGOTUNE_WARMUPS=1
 ALGOTUNE_SOLVE_TIMEOUT=120
 ```
 
+## Comparison settings
+
+Sequential (robust-kernelbench-style repair chain):
+
+```bash
+ROUNDS=5 sbatch benchmarking/algotune/run_slurm.sh
+```
+
+Advanced quality-diversity setting:
+
+```bash
+ROUNDS=5 SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 \
+  USE_STRATEGY=1 USE_DEBUG=1 sbatch benchmarking/algotune/run_slurm.sh
+```
+
+OpenEvolve-only competitor baseline:
+
+```bash
+sbatch benchmarking/openevolve/algotune/run_slurm.sh
+```
+
+See `benchmarking/COMPARISON.md` for the full matrix.
+
 ## Requirements
 
 The full suite needs more than the original 8-task set. `env_kb2` currently has

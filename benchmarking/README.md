@@ -4,9 +4,12 @@ Two benchmark harnesses for optimizer-agent:
 
 - `kernelbench/` — KernelBench / robust_kernelbench-style CUDA kernel optimization
 - `algotune/` — AlgoTune numerical-program optimization
+- `openevolve/` — OpenEvolve-only competitor baselines for AlgoTune and KernelBench
 
 Both use the same `optimizer-agent` loop and evaluator contract. Each benchmark
 owns its task-specific evaluator, prompt config and Slurm launcher.
+`COMPARISON.md` defines the sequential, advanced and OpenEvolve competitor
+settings.
 
 ## KernelBench
 
@@ -83,6 +86,20 @@ NUM_SHARDS=8 sbatch --array=0-7 benchmarking/algotune/run_full_slurm.sh
 The official repo also provides named task lists in `task_lists.json`
 (`fast`, `medium`, `all`, `compute_heavy`, `graph_tasks`), but no top-K
 importance ranking. See `algotune/README.md` for details.
+
+Advanced AlgoTune setting (quality-diversity search):
+
+```bash
+ROUNDS=5 SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 \
+  USE_STRATEGY=1 USE_DEBUG=1 sbatch benchmarking/algotune/run_slurm.sh
+```
+
+OpenEvolve-only competitor:
+
+```bash
+sbatch benchmarking/openevolve/algotune/run_slurm.sh
+PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/openevolve/kernelbench/run_slurm.sh
+```
 
 Environment for the jobs:
 - `env_kb2` for optimizer-agent + AlgoTune evaluator

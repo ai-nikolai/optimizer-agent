@@ -42,6 +42,15 @@ GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
 ROUNDS="${ROUNDS:-5}"
+SAMPLES="${SAMPLES:-1}"
+SELECTION="${SELECTION:-bestN_last}"
+MAP_ELITES_METHOD="${MAP_ELITES_METHOD:-cluster}"
+NUM_MAP_ELITES="${NUM_MAP_ELITES:-1}"
+USE_STRATEGY="${USE_STRATEGY:-0}"
+USE_DEBUG="${USE_DEBUG:-0}"
+DEBUG_ITERATIONS="${DEBUG_ITERATIONS:-1}"
+DIFF_BASED="${DIFF_BASED:-0}"
+DIFF_MODE="${DIFF_MODE:-unified-diff}"
 START="${START:-0}"
 LIMIT="${LIMIT:-}"
 TASKS="${TASKS:-}"
@@ -115,7 +124,12 @@ EXTRA=()
 if [ -n "${LIMIT}" ]; then EXTRA+=(--limit "${LIMIT}"); fi
 if [ -n "${TASKS}" ]; then EXTRA+=(--tasks "${TASKS}"); fi
 if [ -n "${TASK_LIST}" ]; then EXTRA+=(--task-list "${TASK_LIST}"); fi
-EXTRA+=(--start "${START}")
+EXTRA+=(--start "${START}" --samples "${SAMPLES}")
+EXTRA+=(--selection "${SELECTION}" --map-elites-method "${MAP_ELITES_METHOD}")
+EXTRA+=(--num-map-elites "${NUM_MAP_ELITES}")
+if [ "${USE_STRATEGY}" = "1" ]; then EXTRA+=(--use-strategy); fi
+if [ "${USE_DEBUG}" = "1" ]; then EXTRA+=(--use-debug --num-debug-iterations "${DEBUG_ITERATIONS}"); fi
+if [ "${DIFF_BASED}" = "1" ]; then EXTRA+=(--diff-based --diff-mode "${DIFF_MODE}"); fi
 
 echo "=== optimizer-agent AlgoTune at $(date +%T)"
 python benchmarking/algotune/run_tasks.py \
