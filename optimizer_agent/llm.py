@@ -31,6 +31,13 @@ class LLMServer:
         self.timeout = timeout
         self.retries = max(1, int(retries))
         self.retry_backoff = max(0.0, float(retry_backoff))
+        self.usage_totals = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "calls": 0,
+        }
+        self.last_usage = dict(self.usage_totals)
 
     def _headers(self, api_key=None):
         headers = {"Content-Type": "application/json"}
@@ -43,6 +50,24 @@ class LLMServer:
     def _sleep(attempt, attempts, backoff):
         if attempt < attempts - 1 and backoff:
             time.sleep(backoff * (2**attempt))
+
+    def _record_usage(self, usage, model):
+        """Accumulate OpenAI-style token usage for one successful call."""
+        usage = usage or {}
+        prompt = int(usage.get("prompt_tokens", 0) or 0)
+        completion = int(usage.get("completion_tokens", 0) or 0)
+        total = int(usage.get("total_tokens", prompt + completion) or 0)
+        self.last_usage = {
+            "prompt_tokens": prompt,
+            "completion_tokens": completion,
+            "total_tokens": total,
+            "calls": 1,
+            "model": model,
+        }
+        self.usage_totals["prompt_tokens"] += prompt
+        self.usage_totals["completion_tokens"] += completion
+        self.usage_totals["total_tokens"] += total
+        self.usage_totals["calls"] += 1
 
     def call_server(
         self,
@@ -86,7 +111,9 @@ class LLMServer:
                     timeout=self.timeout,
                 )
                 response.raise_for_status()
-                choices = response.json().get("choices") or []
+                data = response.json()
+                self._record_usage(data.get("usage") or {}, model)
+                choices = data.get("choices") or []
                 message = choices[0].get("message", {}) if choices else {}
                 content = message.get("content") or ""
                 if content.strip():
@@ -144,10 +171,24 @@ class FakeLLMServer:
 
     def __init__(self, *args, **kwargs):
         print("Fake LLM server running (no network calls).")
+        self.usage_totals = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "calls": 0,
+        }
+        self.last_usage = dict(self.usage_totals)
 
     def call_server(self, *args, **kwargs):
         length = random.randint(150, 500)
         text = "".join(random.choices(string.ascii_letters + string.digits, k=length))
+        self.last_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "calls": 1,
+        }
+        self.usage_totals["calls"] += 1
         return [text], []
 
     def embed(self, texts, *args, **kwargs):
