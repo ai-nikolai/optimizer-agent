@@ -394,6 +394,12 @@ class Agent:
         self.logger = None
         self._events_path = None
         self._resumed = False
+        self.token_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "calls": 0,
+        }
 
     @staticmethod
     def _pick(value, cfg, key, default):
@@ -491,6 +497,9 @@ class Agent:
                 if loaded_summary.get("completed", True):
                     self.summary = loaded_summary
                     self.history = self.summary.get("history", [])
+                    self.token_usage = loaded_summary.get(
+                        "token_usage", self.token_usage
+                    )
                     self._resumed = True
                     print(f"Resuming completed experiment: {path}")
                     return True
@@ -655,7 +664,7 @@ class Agent:
             self._save_summary(completed=False)
             raise
         finally:
-            self._event("run_end")
+            self._event("run_end", token_usage=self.token_usage)
             self._close_logging()
         return self.history
 
@@ -727,6 +736,7 @@ class Agent:
     ):
         # A strategy belongs to one attempt only; feedback/results are inherited.
         prompt_data.pop("strategy", None)
+        usage_before = dict(self.token_usage)
 
         selected_config = self.select_prompt_config(
             prompt_data, self.improve_config, self.stage_configs
@@ -802,6 +812,10 @@ class Agent:
             other, _ = self.population.get_key(new_code, other)
             other_vector = getattr(self.population, "last_key_vector", None)
 
+        token_usage = {
+            key: self.token_usage.get(key, 0) - usage_before.get(key, 0)
+            for key in self.token_usage
+        }
         raw_score = score_of(eval_result["scores"], key=self.score_key)
         rank_score = rank_score_of(
             eval_result["scores"], key=self.score_key, minimize=self.minimize
@@ -826,6 +840,7 @@ class Agent:
                 "failure_stage": prompt_data.get("failure_stage"),
                 "failure_kind": prompt_data.get("failure_kind"),
                 "scores": eval_result["scores"],
+                "token_usage": token_usage,
             }
         )
         self._event(
@@ -838,6 +853,7 @@ class Agent:
             status=eval_result["status"],
             failure_stage=prompt_data.get("failure_stage"),
             failure_kind=prompt_data.get("failure_kind"),
+            token_usage=token_usage,
         )
         if self.logger:
             self.logger.info(
@@ -953,10 +969,24 @@ class Agent:
             "feedback_response_raw": llm_feedback,
         }
 
+    def _record_llm_usage(self):
+        usage = getattr(self.server, "last_usage", None) or {}
+        self.token_usage["prompt_tokens"] += int(
+            usage.get("prompt_tokens", 0) or 0
+        )
+        self.token_usage["completion_tokens"] += int(
+            usage.get("completion_tokens", 0) or 0
+        )
+        self.token_usage["total_tokens"] += int(
+            usage.get("total_tokens", 0) or 0
+        )
+        self.token_usage["calls"] += 1
+
     def call_llm(self, messages):
         params = dict(self.model_params)
         params.setdefault("model", self.model_name)
         contents, _ = self.server.call_server(messages, **params)
+        self._record_llm_usage()
         return contents[0] if contents else ""
 
     def classify_artifact(self, artifact, taxonomy, method):
@@ -1133,6 +1163,7 @@ class Agent:
             "history": self.history,
             "completed": bool(completed),
             "map_elites_taxonomy": getattr(self.population, "taxonomy", None),
+            "token_usage": self.token_usage,
         }
         write_file(
             self.experiments_dir, "summary.json", json.dumps(self.summary, indent=2)

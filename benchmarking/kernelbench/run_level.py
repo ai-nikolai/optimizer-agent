@@ -192,6 +192,10 @@ def main():
         "scores",
         "stages",
         "statuses",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "llm_calls",
         "error",
     ]
     with open(results_path, "w", newline="", encoding="utf-8") as handle:
@@ -258,6 +262,11 @@ def main():
                     if history
                     else {}
                 )
+                usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "calls": 0}
+                for item in history:
+                    item_usage = item.get("token_usage") or {}
+                    for key in usage:
+                        usage[key] += int(item_usage.get(key, 0) or 0)
                 row_data = {
                     "problem_id": problem_id,
                     "name": name,
@@ -267,6 +276,10 @@ def main():
                     "scores": json.dumps([item["score"] for item in history]),
                     "stages": json.dumps([item.get("failure_stage") for item in history]),
                     "statuses": json.dumps([item.get("status") for item in history]),
+                    "prompt_tokens": usage["prompt_tokens"],
+                    "completion_tokens": usage["completion_tokens"],
+                    "total_tokens": usage["total_tokens"],
+                    "llm_calls": usage["calls"],
                     "error": "",
                 }
             except Exception as exc:  # noqa: BLE001 - one problem must not kill the shard
@@ -280,6 +293,10 @@ def main():
                     "scores": "[]",
                     "stages": "[]",
                     "statuses": "[]",
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                    "llm_calls": 0,
                     "error": f"{type(exc).__name__}: {exc}",
                 }
             writer.writerow(row_data)

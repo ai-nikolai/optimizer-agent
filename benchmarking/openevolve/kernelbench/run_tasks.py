@@ -61,6 +61,20 @@ def load_tasks(tasks_dir, problem_ids):
     return tasks
 
 
+def read_usage(path):
+    totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "calls": 0}
+    if not Path(path).exists():
+        return totals
+    for line in Path(path).read_text(errors="replace").splitlines():
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        for key in totals:
+            totals[key] += int(record.get(key, 0) or 0)
+    return totals
+
+
 def parse_best(task_dir):
     best_dir = task_dir / "openevolve_output" / "best"
     info_path = best_dir / "best_program_info.json"
@@ -106,6 +120,10 @@ def main():
         "best_score",
         "best_speedup",
         "runtime_seconds",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "llm_calls",
         "best_path",
         "error",
     ]
@@ -136,6 +154,9 @@ def main():
                 out_dir = task_dir / "openevolve_output"
                 if out_dir.exists():
                     shutil.rmtree(out_dir)
+                usage_path = task_dir / "token_usage.jsonl"
+                if usage_path.exists():
+                    usage_path.unlink()
             started = time.perf_counter()
             status = "ok"
             error = ""
@@ -155,11 +176,13 @@ def main():
                 f"[{index}/{len(tasks)}] pid={pid} name={name} -> {task_dir}",
                 flush=True,
             )
+            task_env = env.copy()
+            task_env["OPENEVOLVE_USAGE_LOG"] = str(task_dir / "token_usage.jsonl")
             try:
                 proc = subprocess.run(
                     cmd,
                     cwd=str(task_dir),
-                    env=env,
+                    env=task_env,
                     capture_output=True,
                     text=True,
                     timeout=args.timeout,
@@ -180,6 +203,7 @@ def main():
                 status = "no_result"
                 error = "openevolve_output/best/best_program_info.json not found"
             best = best or {}
+            usage = read_usage(task_dir / "token_usage.jsonl")
             row = {
                 "problem_id": pid,
                 "name": name,
@@ -189,6 +213,10 @@ def main():
                 "best_score": best.get("best_score"),
                 "best_speedup": best.get("best_speedup"),
                 "runtime_seconds": f"{runtime:.1f}",
+                "prompt_tokens": usage["prompt_tokens"],
+                "completion_tokens": usage["completion_tokens"],
+                "total_tokens": usage["total_tokens"],
+                "llm_calls": usage["calls"],
                 "best_path": best.get("best_path", ""),
                 "error": error,
             }
