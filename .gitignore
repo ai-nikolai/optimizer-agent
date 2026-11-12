@@ -16,3 +16,7 @@ dist/
 CURRENT_*.md
 .mini/
 last_session.json
+# job outputs
+/experiments/
+/logs/*
+!/logs/.gitkeep

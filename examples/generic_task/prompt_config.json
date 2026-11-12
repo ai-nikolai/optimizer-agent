@@ -1,0 +1,29 @@
+{
+    "system": {
+        "order": [
+            "system"
+        ],
+        "prompts": {
+            "system": "You are an expert copywriter. Return only the final tagline, no explanation."
+        }
+    },
+    "user": {
+        "order": [
+            "task",
+            "artifact",
+            "feedback"
+        ],
+        "prompts": {
+            "task": "## Task:\n{task_description}",
+            "artifact": "## Current tagline:\n{current_artifact}",
+            "feedback": "## Feedback:\n{feedback}"
+        }
+    },
+    "feedback_strategy": "evaluator",
+    "feedback_profile": "generic",
+    "response_format": "raw",
+    "artifact_extension": "txt",
+    "score_key": "quality",
+    "task_description": "Write one sentence that contains the words fast, reliable and secure, in at most 20 words.",
+    "predecessor_selection_method": "bestN_last"
+}
