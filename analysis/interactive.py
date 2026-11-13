@@ -93,6 +93,10 @@ body { background: #0b0f14; color: #e6edf3; font-family: Inter, system-ui, sans-
 .kpi-value { font-size: 30px; font-weight: 750; color: #f0f6fc; margin-top: 6px; line-height: 1.2; }
 .kpi-sublabel { color: #6b7280; font-size: 12px; margin-top: 2px; min-height: 16px; }
 .control-label { color: #9aa4b2; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.control-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.control-label-row .control-label { margin-bottom: 0; }
+.help-icon { color: #7aa2f7; font-size: 13px; opacity: .85; cursor: help; line-height: 1; }
+.help-icon:hover, .help-icon:focus { opacity: 1; outline: none; }
 .dash-dropdown-wrapper { background-color: #121821 !important; color: #e6edf3 !important; }
 .dash-dropdown-trigger { background-color: #121821 !important; border: 1px solid #2a3a4f !important; border-radius: 10px !important; min-height: 42px !important; color: #e6edf3 !important; box-shadow: none !important; }
 .dash-dropdown-trigger:hover, .dash-dropdown-trigger:focus-within { border-color: #7aa2f7 !important; box-shadow: 0 0 0 1px rgba(122,162,247,0.35) !important; }
@@ -350,6 +354,23 @@ def kpi_card(label, value, sublabel="", accent="#7aa2f7"):
     )
 
 
+def control_label(text, target, tooltip, placement="right"):
+    return html.Div(
+        [
+            html.Span(text, className="control-label"),
+            html.Span(
+                html.I(className="bi bi-question-circle"),
+                id=target,
+                className="help-icon",
+                tabIndex="0",
+                role="img",
+                **{"aria-label": "Help"},
+            ),
+        ],
+        className="control-label-row",
+    )
+
+
 def empty_figure(message):
     fig = go.Figure()
     fig.add_annotation(
@@ -501,7 +522,7 @@ def build_layout():
                         [
                             dbc.Col(
                                 [
-                                    html.Div("Metric", className="control-label"),
+                                    control_label("Metric", "metric-help", "Metric to plot. Combined score is evaluator-defined and higher-is-better: AlgoTune uses speedup, KernelBench legacy uses negative runtime, and hardened KernelBench uses speedup."),
                                     dcc.Dropdown(
                                         id="metric-dropdown",
                                         options=[
@@ -516,7 +537,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    html.Div("View", className="control-label"),
+                                    control_label("View", "view-help", "Per-iteration shows each round. Cumulative applies best-so-far to score metrics and cumulative sums to token metrics."),
                                     dcc.RadioItems(
                                         id="view-filter",
                                         options=[
@@ -531,7 +552,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    html.Div("Methods", className="control-label"),
+                                    control_label("Methods", "methods-help", "Filter by method configuration. Labels encode selection method, samples/cells, strategy, and feedback."),
                                     dcc.Dropdown(
                                         id="method-filter",
                                         options=method_options(),
@@ -544,7 +565,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    html.Div("Strategy", className="control-label"),
+                                    control_label("Strategy", "strategy-help", "Filter to runs with or without the strategy stage."),
                                     dcc.Dropdown(
                                         id="strat-filter",
                                         options=[
@@ -559,7 +580,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    html.Div("Feedback", className="control-label"),
+                                    control_label("Feedback", "feedback-help", "Filter to runs with or without LLM feedback."),
                                     dcc.Dropdown(
                                         id="feed-filter",
                                         options=[
@@ -579,7 +600,7 @@ def build_layout():
                         [
                             dbc.Col(
                                 [
-                                    html.Div("Color by", className="control-label"),
+                                    control_label("Color by", "color-help", "Color lines by method, strategy, or feedback. Method is best when comparing different configurations."),
                                     dcc.Dropdown(
                                         id="color-grouping",
                                         options=[
@@ -595,7 +616,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    html.Div("Scale", className="control-label"),
+                                    control_label("Scale", "scale-help", "Logarithmic Y axis helps when a few tasks have very large speedups."),
                                     dcc.Checklist(
                                         id="log-scale",
                                         options=[{"label": "Log Y axis", "value": "log"}],
@@ -740,7 +761,7 @@ def build_layout():
                                 [
                                     dbc.Col(
                                         [
-                                            html.Div("Task", className="control-label"),
+                                            control_label("Task", "lineage-help", "Select a task to inspect parent → child candidates, score deltas, and token usage."),
                                             dcc.Dropdown(
                                                 id="lineage-task",
                                                 options=lineage_options,
@@ -798,6 +819,60 @@ def build_layout():
             html.Div(
                 f"Source: {DATA_DIR} · files {VERSION} · {RUN_LABEL}",
                 className="app-subtitle mt-5",
+            ),
+            dbc.Tooltip(
+                "Metric to plot. Combined score is evaluator-defined and "
+                "higher-is-better: AlgoTune uses speedup, KernelBench legacy "
+                "uses negative runtime, and hardened KernelBench uses speedup.",
+                target="metric-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Per-iteration shows each round. Cumulative applies best-so-far "
+                "to score metrics and cumulative sums to token metrics.",
+                target="view-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Filter by method configuration. Labels encode selection method, "
+                "samples/cells, strategy, and feedback.",
+                target="methods-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Filter to runs with or without the strategy stage.",
+                target="strategy-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Filter to runs with or without LLM feedback.",
+                target="feedback-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Color lines by method, strategy, or feedback. Method is best "
+                "when comparing different configurations.",
+                target="color-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Logarithmic Y axis helps when a few tasks have very large speedups.",
+                target="scale-help",
+                placement="right",
+                delay={"show": 100, "hide": 200},
+            ),
+            dbc.Tooltip(
+                "Select a task to inspect parent → child candidates, score deltas, "
+                "and token usage.",
+                target="lineage-help",
+                placement="left",
+                delay={"show": 100, "hide": 200},
             ),
         ],
     )
