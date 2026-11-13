@@ -72,28 +72,35 @@ SCORE_COLUMNS = [
 ]
 TOKEN_COLUMNS = ["prompt_tokens", "completion_tokens", "total_tokens", "llm_calls"]
 PALETTE = [
-    "#58a6ff",
-    "#f78166",
-    "#3fb950",
-    "#d2a8ff",
-    "#ffa657",
-    "#79c0ff",
-    "#7ee787",
-    "#ff7b72",
+    "#7aa2f7",
+    "#bb9af7",
+    "#9ece6a",
+    "#e0af68",
+    "#7dcfff",
+    "#f7768e",
+    "#ff9e64",
+    "#73daca",
 ]
 GRAPH_CONFIG = {"displayModeBar": False, "responsive": True}
 
 APP_CSS = """
-body { background: #0d1117; color: #c9d1d9; }
-.app-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
-.app-subtitle { color: #8b949e; margin: 4px 0 0; }
-.kpi-label { color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-.kpi-value { font-size: 26px; font-weight: 700; color: #f0f6fc; margin-top: 4px; }
-.kpi-sublabel { color: #6e7681; font-size: 12px; min-height: 16px; }
-.control-label { color: #8b949e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
-.Select-control, .Select-menu-outer { background-color: #0d1117 !important; color: #c9d1d9 !important; }
-.Select-value-label, .Select-placeholder { color: #c9d1d9 !important; }
-.tab--selected { border-top: 2px solid #58a6ff !important; color: #f0f6fc !important; }
+body { background: #0b0f14; color: #e6edf3; font-family: Inter, system-ui, sans-serif; line-height: 1.5; }
+.app-title { font-size: 32px; font-weight: 750; letter-spacing: -0.6px; margin: 0; color: #f0f6fc; }
+.app-subtitle { color: #9aa4b2; margin: 6px 0 0; font-size: 14px; }
+.section-title { color: #e6edf3; font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+.kpi-label { color: #9aa4b2; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+.kpi-value { font-size: 30px; font-weight: 750; color: #f0f6fc; margin-top: 6px; line-height: 1.2; }
+.kpi-sublabel { color: #6b7280; font-size: 12px; margin-top: 2px; min-height: 16px; }
+.control-label { color: #9aa4b2; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.Select-control { background-color: #0b0f14 !important; border-color: #243044 !important; color: #e6edf3 !important; }
+.Select-menu-outer { background-color: #121821 !important; border: 1px solid #243044 !important; color: #e6edf3 !important; }
+.Select-menu-outer .Select-option { background-color: #121821 !important; color: #e6edf3 !important; }
+.Select-menu-outer .Select-option:hover, .Select-menu-outer .Select-option.is-focused { background-color: #1f2937 !important; }
+.Select-value-label, .Select-placeholder { color: #e6edf3 !important; }
+.Select--multi .Select-value { background-color: #1f2937 !important; border: 1px solid #243044 !important; color: #e6edf3 !important; }
+.tab-container { border-bottom: 1px solid #243044 !important; }
+.tab { background: transparent !important; border: none !important; color: #9aa4b2 !important; }
+.tab--selected { border-top: 2px solid #7aa2f7 !important; color: #f0f6fc !important; }
 .js-plotly-plot .plotly .modebar { display: none !important; }
 """
 
@@ -111,20 +118,54 @@ app.index_string = """<!DOCTYPE html>
     <footer>{%config%}{%scripts%}{%renderer%}</footer>
 </body>
 </html>"""
+
 CARD_STYLE = {
-    "backgroundColor": "#161b22",
-    "border": "1px solid #30363d",
-    "borderRadius": "14px",
-    "boxShadow": "0 8px 24px rgba(0,0,0,0.22)",
+    "backgroundColor": "#121821",
+    "border": "1px solid #243044",
+    "borderRadius": "16px",
+    "boxShadow": "0 14px 34px rgba(0,0,0,0.22)",
 }
 CONTROL_STYLE = {
-    "backgroundColor": "#161b22",
-    "border": "1px solid #30363d",
-    "borderRadius": "14px",
-    "padding": "18px 20px",
+    "backgroundColor": "#121821",
+    "border": "1px solid #243044",
+    "borderRadius": "16px",
+    "padding": "22px 24px",
 }
-CHART_STYLE = {"height": "520px"}
-SMALL_CHART_STYLE = {"height": "390px"}
+CHART_CARD_STYLE = {
+    **CARD_STYLE,
+    "padding": "8px",
+}
+HEADER_STYLE = {
+    "background": "linear-gradient(135deg, rgba(122,162,247,0.16), rgba(187,154,247,0.05))",
+    "border": "1px solid #243044",
+    "borderRadius": "18px",
+    "padding": "24px 28px",
+}
+TAB_STYLE = {
+    "padding": "12px 20px",
+    "backgroundColor": "transparent",
+    "border": "none",
+    "color": "#9aa4b2",
+    "fontWeight": "600",
+    "fontSize": "14px",
+}
+TAB_SELECTED_STYLE = {
+    **TAB_STYLE,
+    "color": "#f0f6fc",
+    "borderTop": "2px solid #7aa2f7",
+    "backgroundColor": "rgba(122,162,247,0.06)",
+    "borderRadius": "8px 8px 0 0",
+}
+BADGE_STYLE = {
+    "backgroundColor": "#1f2937",
+    "color": "#e6edf3",
+    "border": "1px solid #243044",
+    "padding": "6px 10px",
+    "fontWeight": "600",
+    "fontSize": "12px",
+}
+CHART_STYLE = {"height": "600px"}
+SMALL_CHART_STYLE = {"height": "440px"}
 
 
 def parse_method(method_name):
@@ -246,7 +287,7 @@ def kpi_values():
     return tasks, iterations, best, tokens, calls
 
 
-def kpi_card(label, value, sublabel=""):
+def kpi_card(label, value, sublabel="", accent="#7aa2f7"):
     return dbc.Card(
         dbc.CardBody(
             [
@@ -254,9 +295,13 @@ def kpi_card(label, value, sublabel=""):
                 html.Div(value, className="kpi-value"),
                 html.Div(sublabel, className="kpi-sublabel"),
             ],
-            className="p-3",
+            className="p-0",
         ),
-        style=CARD_STYLE,
+        style={
+            **CARD_STYLE,
+            "borderTop": f"3px solid {accent}",
+            "padding": "18px 20px",
+        },
         className="h-100",
     )
 
@@ -280,21 +325,46 @@ def style_figure(fig, height=None):
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#c9d1d9", family="Inter, system-ui, sans-serif"),
-        margin=dict(l=45, r=24, t=48, b=38),
+        font=dict(
+            color="#d6dee9",
+            family="Inter, system-ui, sans-serif",
+            size=12,
+        ),
+        margin=dict(l=64, r=32, t=68, b=54),
         hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#121821",
+            bordercolor="#243044",
+            font=dict(color="#e6edf3", size=12),
+        ),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.02,
+            y=1.04,
             xanchor="left",
             x=0,
-            bgcolor="rgba(0,0,0,0)",
+            bgcolor="rgba(18,24,33,0.65)",
+            bordercolor="#243044",
+            borderwidth=1,
+            font=dict(size=12),
         ),
         height=height,
     )
-    fig.update_xaxes(gridcolor="#21262d", zerolinecolor="#30363d")
-    fig.update_yaxes(gridcolor="#21262d", zerolinecolor="#30363d")
+    fig.update_layout(title=dict(x=0.01, xanchor="left"))
+    fig.update_xaxes(
+        gridcolor="#1b2532",
+        zerolinecolor="#243044",
+        automargin=True,
+        title_font=dict(size=13),
+        tickfont=dict(size=12),
+    )
+    fig.update_yaxes(
+        gridcolor="#1b2532",
+        zerolinecolor="#243044",
+        automargin=True,
+        title_font=dict(size=13),
+        tickfont=dict(size=12),
+    )
     return fig
 
 
@@ -307,7 +377,7 @@ def build_layout():
 
     return dbc.Container(
         fluid=True,
-        style={"maxWidth": "1600px", "padding": "24px 28px 40px"},
+        style={"maxWidth": "1560px", "padding": "32px 36px 48px"},
         children=[
             dbc.Row(
                 [
@@ -323,28 +393,64 @@ def build_layout():
                     ),
                     dbc.Col(
                         [
-                            dbc.Badge(f"run {VERSION}", color="primary", className="me-2"),
-                            dbc.Badge(f"{tasks} tasks", color="secondary", className="me-2"),
-                            dbc.Badge(f"{iterations} iterations", color="secondary"),
+                            dbc.Badge(f"run {VERSION}", style=BADGE_STYLE, className="me-2"),
+                            dbc.Badge(f"{tasks} tasks", style=BADGE_STYLE, className="me-2"),
+                            dbc.Badge(f"{iterations} iterations", style=BADGE_STYLE),
                         ],
                         md=4,
                         className="d-flex align-items-center justify-content-end gap-2",
                     ),
                 ],
-                className="mb-4 align-items-center",
+                style=HEADER_STYLE,
+                className="mb-4 align-items-center g-3",
             ),
             dbc.Row(
                 [
-                    dbc.Col(kpi_card("Tasks", f"{tasks:,}", "evaluated"), md=2),
-                    dbc.Col(kpi_card("Iterations", f"{iterations:,}", "search rounds"), md=2),
-                    dbc.Col(kpi_card("Best score", best_text, "best candidate"), md=3),
-                    dbc.Col(kpi_card("Total tokens", token_text, "prompt + completion"), md=3),
-                    dbc.Col(kpi_card("LLM calls", calls_text, "successful requests"), md=2),
+                    dbc.Col(
+                        kpi_card("Tasks", f"{tasks:,}", "evaluated", "#7aa2f7"),
+                        md=2,
+                    ),
+                    dbc.Col(
+                        kpi_card("Iterations", f"{iterations:,}", "search rounds", "#bb9af7"),
+                        md=2,
+                    ),
+                    dbc.Col(
+                        kpi_card("Best score", best_text, "best candidate", "#9ece6a"),
+                        md=3,
+                    ),
+                    dbc.Col(
+                        kpi_card(
+                            "Total tokens",
+                            token_text,
+                            "prompt + completion",
+                            "#e0af68",
+                        ),
+                        md=3,
+                    ),
+                    dbc.Col(
+                        kpi_card(
+                            "LLM calls",
+                            calls_text,
+                            "successful requests",
+                            "#7dcfff",
+                        ),
+                        md=2,
+                    ),
                 ],
-                className="g-3 mb-4",
+                className="g-4 mb-4",
             ),
             html.Div(
                 [
+                    html.Div(
+                        [
+                            html.Div("Controls", className="section-title"),
+                            html.Div(
+                                "Filter the run and choose how to read the results.",
+                                className="app-subtitle",
+                            ),
+                        ],
+                        className="mb-3",
+                    ),
                     dbc.Row(
                         [
                             dbc.Col(
@@ -421,7 +527,7 @@ def build_layout():
                                 md=2,
                             ),
                         ],
-                        className="g-3",
+                        className="g-4",
                     ),
                     dbc.Row(
                         [
@@ -461,7 +567,7 @@ def build_layout():
                                 md=7,
                             ),
                         ],
-                        className="g-3 mt-1",
+                        className="g-4 mt-1",
                     ),
                 ],
                 style=CONTROL_STYLE,
@@ -470,65 +576,105 @@ def build_layout():
             dcc.Tabs(
                 id="tabs",
                 value="trends",
+                parent_style={
+                    "borderBottom": "1px solid #243044",
+                    "marginBottom": "20px",
+                },
                 children=[
                     dcc.Tab(
                         label="Trends",
                         value="trends",
+                        style=TAB_STYLE,
+                        selected_style=TAB_SELECTED_STYLE,
                         children=[
-                            dcc.Graph(
-                                id="trend-chart",
-                                config=GRAPH_CONFIG,
-                                style=CHART_STYLE,
+                            dbc.Card(
+                                dbc.CardBody(
+                                    dcc.Graph(
+                                        id="trend-chart",
+                                        config=GRAPH_CONFIG,
+                                        style=CHART_STYLE,
+                                    ),
+                                    className="p-2",
+                                ),
+                                style=CHART_CARD_STYLE,
                             )
                         ],
                     ),
                     dcc.Tab(
                         label="Tasks",
                         value="tasks",
+                        style=TAB_STYLE,
+                        selected_style=TAB_SELECTED_STYLE,
                         children=[
                             dbc.Row(
                                 [
                                     dbc.Col(
-                                        dcc.Graph(
-                                            id="task-chart",
-                                            config=GRAPH_CONFIG,
-                                            style=CHART_STYLE,
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                dcc.Graph(
+                                                    id="task-chart",
+                                                    config=GRAPH_CONFIG,
+                                                    style=CHART_STYLE,
+                                                ),
+                                                className="p-2",
+                                            ),
+                                            style=CHART_CARD_STYLE,
                                         ),
                                         lg=7,
                                     ),
                                     dbc.Col(
-                                        html.Div(id="task-table"),
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                html.Div(id="task-table"),
+                                                className="p-3",
+                                            ),
+                                            style=CHART_CARD_STYLE,
+                                        ),
                                         lg=5,
                                     ),
                                 ],
-                                className="g-3 mt-1",
+                                className="g-4 mt-1",
                             )
                         ],
                     ),
                     dcc.Tab(
                         label="Tokens",
                         value="tokens",
+                        style=TAB_STYLE,
+                        selected_style=TAB_SELECTED_STYLE,
                         children=[
                             dbc.Row(
                                 [
                                     dbc.Col(
-                                        dcc.Graph(
-                                            id="token-scatter",
-                                            config=GRAPH_CONFIG,
-                                            style=SMALL_CHART_STYLE,
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                dcc.Graph(
+                                                    id="token-scatter",
+                                                    config=GRAPH_CONFIG,
+                                                    style=SMALL_CHART_STYLE,
+                                                ),
+                                                className="p-2",
+                                            ),
+                                            style=CHART_CARD_STYLE,
                                         ),
                                         lg=6,
                                     ),
                                     dbc.Col(
-                                        dcc.Graph(
-                                            id="token-trend",
-                                            config=GRAPH_CONFIG,
-                                            style=SMALL_CHART_STYLE,
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                dcc.Graph(
+                                                    id="token-trend",
+                                                    config=GRAPH_CONFIG,
+                                                    style=SMALL_CHART_STYLE,
+                                                ),
+                                                className="p-2",
+                                            ),
+                                            style=CHART_CARD_STYLE,
                                         ),
                                         lg=6,
                                     ),
                                 ],
-                                className="g-3 mt-1",
+                                className="g-4 mt-1",
                             )
                         ],
                     ),
@@ -536,7 +682,7 @@ def build_layout():
             ),
             html.Div(
                 f"Source: {DATA_DIR} · version {VERSION}",
-                className="app-subtitle mt-4",
+                className="app-subtitle mt-5",
             ),
         ],
     )
@@ -599,7 +745,7 @@ def update_trend(metric, view, methods, strategies, feedbacks, color_by, log_sca
                         color=PALETTE[group_index % len(PALETTE)],
                         width=2.5,
                     ),
-                    marker=dict(size=7, line=dict(width=1, color="#0d1117")),
+                    marker=dict(size=7, line=dict(width=1, color="#0b0f14")),
                     hovertemplate=(
                         "<b>%{fullData.name}</b><br>"
                         "iteration %{x}<br>"
@@ -686,14 +832,20 @@ def update_task_chart(methods, strategies, feedbacks):
     valid = df[df["valid"]].sort_values("best_speedup", ascending=True)
     if valid.empty:
         return empty_figure("No valid candidate for the selected tasks")
+    method_labels = list(valid["method_label"].unique())
+    method_colors = {
+        label: PALETTE[index % len(PALETTE)]
+        for index, label in enumerate(method_labels)
+    }
     fig = go.Figure(
         go.Bar(
             x=valid["best_speedup"],
             y=valid["problem_id"],
             orientation="h",
-            marker_color=[
-                PALETTE[i % len(PALETTE)] for i in range(len(valid))
-            ],
+            marker=dict(
+                color=[method_colors[label] for label in valid["method_label"]],
+                line=dict(width=0),
+            ),
             hovertemplate="<b>%{y}</b><br>best score: %{x:,.3f}<extra></extra>",
         )
     )
@@ -702,6 +854,7 @@ def update_task_chart(methods, strategies, feedbacks):
         xaxis_title="Best score / speedup",
         yaxis_title="",
         showlegend=False,
+        bargap=0.38,
     )
     fig.update_xaxes(rangemode="tozero")
     return style_figure(fig, height=560)
@@ -737,18 +890,19 @@ def update_task_table(methods, strategies, feedbacks):
         columns=[{"name": column, "id": column} for column in display.columns],
         style_as_list_view=True,
         style_header={
-            "backgroundColor": "#161b22",
-            "color": "#8b949e",
-            "fontWeight": "600",
-            "border": "1px solid #30363d",
+            "backgroundColor": "#121821",
+            "color": "#9aa4b2",
+            "fontWeight": "700",
+            "fontSize": "12px",
+            "border": "1px solid #243044",
         },
         style_cell={
-            "backgroundColor": "#0d1117",
-            "color": "#c9d1d9",
-            "border": "1px solid #21262d",
-            "padding": "8px 10px",
+            "backgroundColor": "#0b0f14",
+            "color": "#d6dee9",
+            "border": "1px solid #1b2532",
+            "padding": "9px 11px",
             "fontFamily": "Inter, system-ui, sans-serif",
-            "fontSize": "12px",
+            "fontSize": "12.5px",
             "textAlign": "left",
         },
         style_data_conditional=[
@@ -789,7 +943,7 @@ def update_token_scatter(methods, strategies, feedbacks):
                 marker=dict(
                     size=np.clip(np.sqrt(subset["calls"].to_numpy() + 1) * 7, 8, 30),
                     color=PALETTE[index % len(PALETTE)],
-                    line=dict(width=1, color="#0d1117"),
+                    line=dict(width=1, color="#0b0f14"),
                     opacity=0.9,
                 ),
                 text=subset["problem_id"],
@@ -859,6 +1013,7 @@ def update_token_trend(methods, strategies, feedbacks):
         xaxis_title="Iteration",
         yaxis_title="Tokens",
         barmode="group",
+        bargap=0.28,
         showlegend=True,
     )
     fig.update_xaxes(dtick=1)
