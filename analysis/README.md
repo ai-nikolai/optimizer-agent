@@ -37,7 +37,21 @@ experiment_results_summary_<version>.csv
 experiment_results_summary_agg_<version>.csv
 ```
 
-## 2. Open the interactive viewer
+## 2. Build candidate lineage
+
+`collect_lineage.py` reconstructs parent → child candidate links from the saved
+prompts and candidate artifacts:
+
+```bash
+python analysis/collect_lineage.py \
+  --experiments-dir experiments/algotune_adv8_1794491181 \
+  --version adv8
+```
+
+This writes `lineage_<version>.csv` next to the run. The viewer exposes it in
+the **Lineage** tab, including parent/child scores and score deltas.
+
+## 3. Open the interactive viewer
 
 ```bash
 python analysis/interactive.py \

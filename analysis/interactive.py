@@ -45,7 +45,7 @@ PERFORMANCE_METRICS = [
 TOKEN_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens", "llm_calls"]
 METRICS = PERFORMANCE_METRICS + TOKEN_METRICS
 METRIC_LABELS = {
-    "combined_score": "Score / speedup",
+    "combined_score": "Combined score",
     "fast_1": "Fast @ 1x",
     "fast_2": "Fast @ 2x",
     "correctness": "Correctness",
@@ -226,6 +226,36 @@ def load_raw():
     return enrich(pd.read_csv(path))
 
 
+def load_lineage():
+    path = DATA_DIR / f"lineage_{VERSION}.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    for column in [
+        "child_iteration",
+        "child_sample",
+        "child_score",
+        "child_tokens",
+        "parent_iteration",
+        "parent_sample",
+        "parent_score",
+        "delta",
+    ]:
+        if column in df.columns:
+            df[column] = pd.to_numeric(df[column], errors="coerce")
+    return df
+
+
+def lineage_task_options():
+    df = load_lineage()
+    if df is None or df.empty:
+        return []
+    return [
+        {"label": task, "value": task}
+        for task in sorted(df["task"].dropna().unique())
+    ]
+
+
 def prepare_summary(cumulative=False):
     df = load_summary()
     if cumulative and not df.empty:
@@ -330,7 +360,7 @@ def style_figure(fig, height=None):
             family="Inter, system-ui, sans-serif",
             size=12,
         ),
-        margin=dict(l=64, r=32, t=68, b=54),
+        margin=dict(l=64, r=32, t=68, b=96),
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor="#121821",
@@ -339,10 +369,10 @@ def style_figure(fig, height=None):
         ),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=1.04,
-            xanchor="left",
-            x=0,
+            yanchor="top",
+            y=-0.22,
+            xanchor="center",
+            x=0.5,
             bgcolor="rgba(18,24,33,0.65)",
             bordercolor="#243044",
             borderwidth=1,
@@ -371,6 +401,8 @@ def style_figure(fig, height=None):
 def build_layout():
     tasks, iterations, best, tokens, calls = kpi_values()
     method_values = [option["value"] for option in method_options()]
+    lineage_options = lineage_task_options()
+    lineage_default = lineage_options[0]["value"] if lineage_options else None
     best_text = f"{best:,.3f}" if best is not None else "—"
     token_text = f"{tokens:,.0f}" if tokens > 0 else "—"
     calls_text = f"{calls:,.0f}" if calls > 0 else "—"
@@ -415,7 +447,7 @@ def build_layout():
                         md=2,
                     ),
                     dbc.Col(
-                        kpi_card("Best score", best_text, "best candidate", "#9ece6a"),
+                        kpi_card("Best score", best_text, "combined score", "#9ece6a"),
                         md=3,
                     ),
                     dbc.Col(
@@ -561,13 +593,19 @@ def build_layout():
                             ),
                             dbc.Col(
                                 html.Div(
-                                    "Tip: use the Tasks and Tokens tabs for per-task breakdowns.",
+                                    "Tip: Tasks, Tokens and Lineage provide per-task and parent→child breakdowns.",
                                     className="app-subtitle mt-2",
                                 ),
                                 md=7,
                             ),
                         ],
                         className="g-4 mt-1",
+                    ),
+                    html.Div(
+                        "Combined score is evaluator-defined and higher-is-better: "
+                        "AlgoTune uses speedup; KernelBench legacy uses negative runtime; "
+                        "hardened KernelBench uses speedup.",
+                        className="app-subtitle mt-3",
                     ),
                 ],
                 style=CONTROL_STYLE,
@@ -676,6 +714,69 @@ def build_layout():
                                 ],
                                 className="g-4 mt-1",
                             )
+                        ],
+                    ),
+                    dcc.Tab(
+                        label="Lineage",
+                        value="lineage",
+                        style=TAB_STYLE,
+                        selected_style=TAB_SELECTED_STYLE,
+                        children=[
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.Div("Task", className="control-label"),
+                                            dcc.Dropdown(
+                                                id="lineage-task",
+                                                options=lineage_options,
+                                                value=lineage_default,
+                                                clearable=False,
+                                                placeholder="Select a task",
+                                            ),
+                                        ],
+                                        md=4,
+                                        className="mb-3",
+                                    ),
+                                    dbc.Col(
+                                        html.Div(
+                                            "Parent → child candidate links, with score deltas.",
+                                            className="app-subtitle mt-4",
+                                        ),
+                                        md=8,
+                                    ),
+                                ],
+                                className="g-3",
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                dcc.Graph(
+                                                    id="lineage-graph",
+                                                    config=GRAPH_CONFIG,
+                                                    style=CHART_STYLE,
+                                                ),
+                                                className="p-2",
+                                            ),
+                                            style=CHART_CARD_STYLE,
+                                        ),
+                                        lg=7,
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                html.Div(id="lineage-table"),
+                                                className="p-3",
+                                            ),
+                                            style=CHART_CARD_STYLE,
+                                        ),
+                                        lg=5,
+                                    ),
+                                ],
+                                className="g-4 mt-1",
+                            ),
                         ],
                     ),
                 ],
@@ -846,12 +947,12 @@ def update_task_chart(methods, strategies, feedbacks):
                 color=[method_colors[label] for label in valid["method_label"]],
                 line=dict(width=0),
             ),
-            hovertemplate="<b>%{y}</b><br>best score: %{x:,.3f}<extra></extra>",
+            hovertemplate="<b>%{y}</b><br>combined score: %{x:,.3f}<extra></extra>",
         )
     )
     fig.update_layout(
-        title=dict(text="Best score per task", font=dict(size=18)),
-        xaxis_title="Best score / speedup",
+        title=dict(text="Best combined score per task", font=dict(size=18)),
+        xaxis_title="Best combined score",
         yaxis_title="",
         showlegend=False,
         bargap=0.38,
@@ -875,7 +976,7 @@ def update_task_table(methods, strategies, feedbacks):
     table = df.copy()
     table["Task"] = table["problem_id"]
     table["Method"] = table["method_label"]
-    table["Best score"] = table.apply(
+    table["Combined score"] = table.apply(
         lambda row: f"{row['best_speedup']:,.3f}" if row["valid"] else "invalid",
         axis=1,
     )
@@ -883,8 +984,8 @@ def update_task_table(methods, strategies, feedbacks):
     table["Calls"] = table["calls"].apply(lambda value: f"{value:,.0f}")
     table["Correct"] = table["correctness"].apply(lambda value: f"{value:.0%}")
     display = table[
-        ["Task", "Method", "Best score", "Tokens", "Calls", "Correct"]
-    ].sort_values(["Method", "Best score"], ascending=[True, False])
+        ["Task", "Method", "Combined score", "Tokens", "Calls", "Correct"]
+    ].sort_values(["Method", "Combined score"], ascending=[True, False])
     return dash_table.DataTable(
         data=display.to_dict("records"),
         columns=[{"name": column, "id": column} for column in display.columns],
@@ -950,7 +1051,7 @@ def update_token_scatter(methods, strategies, feedbacks):
                 hovertemplate=(
                     "<b>%{text}</b><br>"
                     "tokens: %{x:,.0f}<br>"
-                    "best score: %{y:,.3f}"
+                    "combined score: %{y:,.3f}"
                     "<extra></extra>"
                 ),
             )
@@ -958,7 +1059,7 @@ def update_token_scatter(methods, strategies, feedbacks):
     fig.update_layout(
         title=dict(text="Token cost vs performance", font=dict(size=18)),
         xaxis_title="Total tokens",
-        yaxis_title="Best score / speedup",
+        yaxis_title="Best combined score",
         showlegend=True,
     )
     fig.update_xaxes(tickformat=",.0f")
@@ -1019,6 +1120,181 @@ def update_token_trend(methods, strategies, feedbacks):
     fig.update_xaxes(dtick=1)
     fig.update_yaxes(tickformat=",.0f")
     return style_figure(fig, height=430)
+
+
+@app.callback(
+    Output("lineage-graph", "figure"),
+    [Input("lineage-task", "value")],
+)
+def update_lineage_graph(task):
+    df = load_lineage()
+    if df is None or df.empty:
+        return empty_figure(
+            "No lineage data. Generate it with: python analysis/collect_lineage.py "
+            "--experiments-dir <run-dir> --version <version>"
+        )
+    if task:
+        df = df[df["task"] == task]
+    if df.empty:
+        return empty_figure("No lineage rows for this task")
+
+    df = df.sort_values(["child_iteration", "child_sample"]).copy()
+    edge_x, edge_y = [], []
+    for row in df.itertuples():
+        if (
+            pd.notna(row.parent_iteration)
+            and pd.notna(row.parent_score)
+            and pd.notna(row.child_score)
+        ):
+            edge_x.extend([row.parent_iteration, row.child_iteration, None])
+            edge_y.extend([row.parent_score, row.child_score, None])
+
+    fig = go.Figure()
+    if edge_x:
+        fig.add_trace(
+            go.Scatter(
+                x=edge_x,
+                y=edge_y,
+                mode="lines",
+                line=dict(color="#30363d", width=1.6),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+
+    valid = df["child_valid"].astype(str).str.lower().isin(["true", "1"])
+    colors = ["#9ece6a" if value else "#f7768e" for value in valid]
+    custom = list(
+        zip(
+            df["task"],
+            df["child_iteration"],
+            df["child_sample"],
+            df["parent_iteration"].fillna(-1),
+            df["parent_sample"].fillna(-1),
+            df["delta"].fillna(0.0),
+            df["match"],
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df["child_iteration"],
+            y=df["child_score"],
+            mode="markers",
+            marker=dict(
+                size=11,
+                color=colors,
+                line=dict(width=1, color="#0b0f14"),
+            ),
+            customdata=custom,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "child: iteration %{customdata[1]} · sample %{customdata[2]}<br>"
+                "score: %{y:.3f}<br>"
+                "parent: iteration %{customdata[3]} · sample %{customdata[4]}<br>"
+                "delta: %{customdata[5]:+.3f}<br>"
+                "match: %{customdata[6]}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    fig.update_layout(
+        title=dict(text=f"Candidate lineage · {task}", font=dict(size=18)),
+        xaxis_title="Iteration",
+        yaxis_title="Combined score",
+        showlegend=False,
+    )
+    fig.update_xaxes(dtick=1)
+    scores = finite_values(df["child_score"])
+    if not scores.empty and scores.min() >= 0 and scores.max() > 1.0:
+        fig.add_hline(
+            y=1.0,
+            line_dash="dot",
+            line_color="#8b949e",
+            annotation_text="baseline parity",
+            annotation_position="top left",
+        )
+    fig = style_figure(fig, height=560)
+    fig.update_layout(hovermode="closest")
+    return fig
+
+
+@app.callback(
+    Output("lineage-table", "children"),
+    [Input("lineage-task", "value")],
+)
+def update_lineage_table(task):
+    df = load_lineage()
+    if df is None or df.empty:
+        return html.Div(
+            "No lineage data. Run `analysis/collect_lineage.py` for this run.",
+            className="app-subtitle",
+        )
+    if task:
+        df = df[df["task"] == task]
+    if df.empty:
+        return html.Div("No lineage rows for this task.", className="app-subtitle")
+
+    display = df.sort_values(["child_iteration", "child_sample"]).copy()
+    display["Child"] = display.apply(
+        lambda row: f"it {int(row['child_iteration'])} · s {int(row['child_sample'])}",
+        axis=1,
+    )
+    display["Child score"] = display["child_score"].apply(
+        lambda value: f"{value:,.3f}" if pd.notna(value) else "—"
+    )
+    display["Parent"] = display.apply(
+        lambda row: (
+            "baseline"
+            if row["match"] == "baseline"
+            else f"it {int(row['parent_iteration'])} · s {int(row['parent_sample'])}"
+            if pd.notna(row["parent_iteration"]) and pd.notna(row["parent_sample"])
+            else "—"
+        ),
+        axis=1,
+    )
+    display["Parent score"] = display["parent_score"].apply(
+        lambda value: f"{value:,.3f}" if pd.notna(value) else "—"
+    )
+    display["Δ score"] = display["delta"].apply(
+        lambda value: f"{value:+.3f}" if pd.notna(value) else "—"
+    )
+    display["Match"] = display["match"]
+    display["Tokens"] = display["child_tokens"].apply(
+        lambda value: f"{value:,.0f}" if pd.notna(value) else "—"
+    )
+    columns = [
+        "Child",
+        "Child score",
+        "Parent",
+        "Parent score",
+        "Δ score",
+        "Match",
+        "Tokens",
+    ]
+    return dash_table.DataTable(
+        data=display[columns].to_dict("records"),
+        columns=[{"name": column, "id": column} for column in columns],
+        style_as_list_view=True,
+        style_header={
+            "backgroundColor": "#121821",
+            "color": "#9aa4b2",
+            "fontWeight": "700",
+            "fontSize": "12px",
+            "border": "1px solid #243044",
+        },
+        style_cell={
+            "backgroundColor": "#0b0f14",
+            "color": "#d6dee9",
+            "border": "1px solid #1b2532",
+            "padding": "9px 11px",
+            "fontFamily": "Inter, system-ui, sans-serif",
+            "fontSize": "12.5px",
+            "textAlign": "left",
+        },
+        page_size=12,
+        sort_action="native",
+        style_table={"overflowX": "auto"},
+    )
 
 
 if __name__ == "__main__":
