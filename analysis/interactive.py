@@ -85,7 +85,26 @@ PALETTE = [
 GRAPH_CONFIG = {"displayModeBar": False, "responsive": True}
 
 APP_CSS = """
+:root {
+    color-scheme: dark;
+    --Dash-Text-Primary: #e6edf3;
+    --Dash-Text-Secondary: #9aa4b2;
+    --Dash-Text-Disabled: #6b7280;
+    --Dash-Fill-Primary: #121821;
+    --Dash-Fill-Secondary: #0b0f14;
+    --Dash-Fill-Interactive-Strong: #7aa2f7;
+    --Dash-Fill-Interactive-Weak: #1f2937;
+    --Dash-Stroke-Strong: #2a3a4f;
+    --Dash-Stroke-Weak: #1b2532;
+}
 body { background: #0b0f14; color: #e6edf3; font-family: Inter, system-ui, sans-serif; line-height: 1.5; }
+.dash-options-list-option { color: #e6edf3 !important; font-size: 13px; line-height: 1.4; }
+.dash-options-list-option-text { color: #e6edf3 !important; }
+.dash-options-list-option:hover, .dash-options-list-option:focus-within { color: #7aa2f7 !important; }
+.dash-options-list-option-checkbox { accent-color: #7aa2f7 !important; }
+.dash-radioitems-inline .dash-options-list-option,
+.dash-checklist-inline .dash-options-list-option { margin-right: 14px; }
+.tooltip-inner { background-color: #121821 !important; color: #e6edf3 !important; border: 1px solid #2a3a4f; }
 .app-title { font-size: 32px; font-weight: 750; letter-spacing: -0.6px; margin: 0; color: #f0f6fc; }
 .app-subtitle { color: #9aa4b2; margin: 6px 0 0; font-size: 14px; }
 .section-title { color: #e6edf3; font-size: 14px; font-weight: 700; letter-spacing: .02em; }
