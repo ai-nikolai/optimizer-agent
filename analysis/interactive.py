@@ -30,6 +30,7 @@ app.title = "optimizer-agent · Experiment Explorer"
 # Set from CLI in __main__.
 DATA_DIR = Path(".")
 VERSION = "optagent"
+RUN_LABEL = "optagent"
 
 PERFORMANCE_METRICS = [
     "combined_score",
@@ -92,12 +93,25 @@ body { background: #0b0f14; color: #e6edf3; font-family: Inter, system-ui, sans-
 .kpi-value { font-size: 30px; font-weight: 750; color: #f0f6fc; margin-top: 6px; line-height: 1.2; }
 .kpi-sublabel { color: #6b7280; font-size: 12px; margin-top: 2px; min-height: 16px; }
 .control-label { color: #9aa4b2; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
-.Select-control { background-color: #0b0f14 !important; border-color: #243044 !important; color: #e6edf3 !important; }
-.Select-menu-outer { background-color: #121821 !important; border: 1px solid #243044 !important; color: #e6edf3 !important; }
-.Select-menu-outer .Select-option { background-color: #121821 !important; color: #e6edf3 !important; }
-.Select-menu-outer .Select-option:hover, .Select-menu-outer .Select-option.is-focused { background-color: #1f2937 !important; }
+.dash-dropdown-wrapper { background-color: #121821 !important; color: #e6edf3 !important; }
+.dash-dropdown-trigger { background-color: #121821 !important; border: 1px solid #2a3a4f !important; border-radius: 10px !important; min-height: 42px !important; color: #e6edf3 !important; box-shadow: none !important; }
+.dash-dropdown-trigger:hover, .dash-dropdown-trigger:focus-within { border-color: #7aa2f7 !important; box-shadow: 0 0 0 1px rgba(122,162,247,0.35) !important; }
+.dash-dropdown-value { background-color: transparent !important; color: #e6edf3 !important; }
+.dash-dropdown-placeholder { color: #6b7280 !important; }
+.dash-dropdown-value-item { background-color: #1f2937 !important; border: 1px solid #2a3a4f !important; color: #e6edf3 !important; border-radius: 6px !important; }
+.dash-dropdown-content { background-color: #121821 !important; border: 1px solid #2a3a4f !important; border-radius: 10px !important; box-shadow: 0 18px 40px rgba(0,0,0,0.45) !important; overflow: hidden !important; }
+.dash-dropdown-options { background-color: #121821 !important; }
+.dash-dropdown-option { background-color: #121821 !important; color: #e6edf3 !important; padding: 9px 12px !important; cursor: pointer !important; }
+.dash-dropdown-option:hover, .dash-dropdown-option[aria-selected="true"], .dash-dropdown-option[data-selected="true"] { background-color: #1f2937 !important; color: #f0f6fc !important; }
+.dash-dropdown-search-container, .dash-dropdown-search { background-color: #0b0f14 !important; color: #e6edf3 !important; }
+.dash-dropdown-search input { background-color: #0b0f14 !important; color: #e6edf3 !important; }
+.dash-dropdown-clear, .dash-dropdown-trigger-icon, .dash-dropdown-action-button { color: #9aa4b2 !important; }
+.dash-checklist label, .dash-radio-items label { color: #d6dee9 !important; }
+.Select-control { background-color: #121821 !important; border-color: #2a3a4f !important; color: #e6edf3 !important; }
+.Select-menu-outer { background-color: #121821 !important; border: 1px solid #2a3a4f !important; color: #e6edf3 !important; }
+.Select-option { background-color: #121821 !important; color: #e6edf3 !important; }
+.Select-option:hover, .Select-option.is-focused { background-color: #1f2937 !important; }
 .Select-value-label, .Select-placeholder { color: #e6edf3 !important; }
-.Select--multi .Select-value { background-color: #1f2937 !important; border: 1px solid #243044 !important; color: #e6edf3 !important; }
 .tab-container { border-bottom: 1px solid #243044 !important; }
 .tab { background: transparent !important; border: none !important; color: #9aa4b2 !important; }
 .tab--selected { border-top: 2px solid #7aa2f7 !important; color: #f0f6fc !important; }
@@ -425,7 +439,7 @@ def build_layout():
                     ),
                     dbc.Col(
                         [
-                            dbc.Badge(f"run {VERSION}", style=BADGE_STYLE, className="me-2"),
+                            dbc.Badge(f"run {RUN_LABEL}", style=BADGE_STYLE, className="me-2"),
                             dbc.Badge(f"{tasks} tasks", style=BADGE_STYLE, className="me-2"),
                             dbc.Badge(f"{iterations} iterations", style=BADGE_STYLE),
                         ],
@@ -782,7 +796,7 @@ def build_layout():
                 ],
             ),
             html.Div(
-                f"Source: {DATA_DIR} · version {VERSION}",
+                f"Source: {DATA_DIR} · files {VERSION} · {RUN_LABEL}",
                 className="app-subtitle mt-5",
             ),
         ],
@@ -1309,6 +1323,11 @@ if __name__ == "__main__":
         default="optagent",
         help="Suffix used by collect_results.py.",
     )
+    parser.add_argument(
+        "--label",
+        default=None,
+        help="Display label for the run (defaults to --version).",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8050)
     parser.add_argument("--debug", action="store_true")
@@ -1316,5 +1335,7 @@ if __name__ == "__main__":
 
     DATA_DIR = Path(args.data_dir).resolve()
     VERSION = args.version
+    RUN_LABEL = args.label or args.version
+    app.title = f"optimizer-agent · {RUN_LABEL}"
     app.layout = build_layout()
     app.run(host=args.host, port=args.port, debug=args.debug)
