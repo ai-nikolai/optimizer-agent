@@ -103,7 +103,7 @@ def parse_best(task_dir):
 
 def main():
     args = parse_args()
-    tasks_dir = Path(args.tasks_dir)
+    tasks_dir = Path(args.tasks_dir).resolve()
     problem_ids = None
     if args.problem_ids:
         problem_ids = {
@@ -184,7 +184,7 @@ def main():
                 flush=True,
             )
             task_env = env.copy()
-            task_env["OPENEVOLVE_USAGE_LOG"] = str(task_dir / "token_usage.jsonl")
+            task_env["OPENEVOLVE_USAGE_LOG"] = str((task_dir / "token_usage.jsonl").resolve())
             try:
                 proc = subprocess.run(
                     cmd,
