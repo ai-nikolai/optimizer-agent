@@ -24,7 +24,6 @@ import sys
 import time
 import traceback
 import uuid
-from pathlib import Path
 
 MARKER = "=== Evaluation Result ==="
 
@@ -173,9 +172,7 @@ def main():
         cand_times = []
         for problem in problems:
             try:
-                reference_solution = _with_timeout(
-                    solve_timeout, task.solve, problem
-                )
+                _with_timeout(solve_timeout, task.solve, problem)
                 candidate_solution = _with_timeout(
                     solve_timeout, solver.solve, problem
                 )

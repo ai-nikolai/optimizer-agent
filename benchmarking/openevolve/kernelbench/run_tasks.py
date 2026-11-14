@@ -24,6 +24,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from benchmarking.openevolve.common import parse_best, read_usage  # noqa: E402
 DEFAULT_OPENEVOLVE_ROOT = Path("/hx2-weka/home/nr1713/openevolve")
 DEFAULT_ROBUST_KB = "/hx2-weka/home/nr1713/robust_kernelbench"
 
@@ -59,46 +62,6 @@ def load_tasks(tasks_dir, problem_ids):
         tasks.append((path, meta))
     tasks.sort(key=lambda item: int(item[1]["problem_id"]))
     return tasks
-
-
-def read_usage(path):
-    totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "calls": 0}
-    if not Path(path).exists():
-        return totals
-    for line in Path(path).read_text(errors="replace").splitlines():
-        try:
-            record = json.loads(line)
-        except ValueError:
-            continue
-        for key in totals:
-            totals[key] += int(record.get(key, 0) or 0)
-    return totals
-
-
-def parse_best(task_dir):
-    best_dir = task_dir / "openevolve_output" / "best"
-    info_path = best_dir / "best_program_info.json"
-    if not info_path.exists():
-        return None
-    try:
-        info = json.loads(info_path.read_text())
-    except ValueError:
-        return None
-    evaluation = info.get("evaluation_result") or {}
-    metrics = info.get("metrics") or {}
-    return {
-        "best_score": info.get(
-            "score", metrics.get("combined_score", evaluation.get("combined_score"))
-        ),
-        "best_speedup": info.get(
-            "speedup_score",
-            metrics.get(
-                "speedup_score",
-                evaluation.get("speedup_score", evaluation.get("combined_score")),
-            ),
-        ),
-        "best_path": str(best_dir / "best_program.py"),
-    }
 
 
 def main():
