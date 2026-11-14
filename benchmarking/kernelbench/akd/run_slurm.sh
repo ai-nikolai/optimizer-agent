@@ -5,7 +5,7 @@
 #SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_akd_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h200:3,scratch:200g
+#SBATCH --gres=gpu:h200:2,scratch:200g
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=400G
@@ -13,8 +13,8 @@
 # Replay of the kernel_eng2 / automatic_knowledge_discovery experiment inside
 # the optimizer-agent benchmarking branch.
 #
-#   GPU 0,1: vLLM (TP=2)
-#   GPU 2  : optimizer-agent + CUDA evaluator
+#   GPU 0: vLLM (TP=1)
+#   GPU 1: optimizer-agent + CUDA evaluator (one task at a time)
 #
 # The default evaluator is the legacy in-flight one (evaluate_legacy.py) so the
 # replay matches the running AKD experiments.  For a hardened run, use:
@@ -47,7 +47,7 @@ export KERNEL_BUILD_ROOT="${SCRATCH}/kernel_builds"
 
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
-GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.90}"
+GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
 
@@ -75,7 +75,7 @@ EVAL_TIMEOUT="${EVAL_TIMEOUT:-1800}"
 DATASET_DIR="${DATASET_DIR:-${REPO}/benchmarking/kernelbench/akd/dataset}"
 PROMPT_CONFIG="${PROMPT_CONFIG:-${REPO}/benchmarking/kernelbench/akd/prompt_config.json}"
 FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${REPO}/benchmarking/kernelbench/akd/feedback_config.json}"
-EVALUATE="${EVALUATE:-${REPO}/benchmarking/kernelbench/akd/evaluate_legacy.py}"
+EVALUATE="${EVALUATE:-${REPO}/benchmarking/kernelbench/evaluate.py}"  # robust; legacy: akd/evaluate_legacy.py
 EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${EXPERIMENT_NAME}}"
 
 cd "${REPO}"
@@ -84,7 +84,7 @@ mkdir -p logs experiments "${EXPERIMENT_DIR}"
 source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
 conda activate env_vllm30
 
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0
 export PATH="/usr/local/cuda/bin:${PATH}"
 export CUDA_HOME="/usr/local/cuda"
 export PYTHONUNBUFFERED=1
@@ -93,7 +93,7 @@ echo "=== starting vLLM job ${JOB_ID} at $(date +%T)"
 setsid python3 -m vllm.entrypoints.openai.api_server \
     --model "${MODEL_NAME}" \
     --served-model-name "${MODEL_NAME}" \
-    --tensor-parallel-size 2 \
+    --tensor-parallel-size 1 \
     --host 0.0.0.0 \
     --port "${PORT}" \
     --max-model-len "${MAX_MODEL_LEN}" \
@@ -132,7 +132,7 @@ fi
 conda deactivate
 conda activate env_kb2
 export PYTHONPATH="${REPO}"
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=1
 export PATH="/usr/local/cuda/bin:${PATH}"
 export CUDA_HOME="/usr/local/cuda"
 export MAX_JOBS="${MAX_JOBS:-4}"

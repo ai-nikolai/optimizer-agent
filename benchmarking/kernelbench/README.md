@@ -29,7 +29,7 @@ optimizer-agent:
 - `../feedback/kernel_rules_llm.json` — kernel profile + `rules_llm` feedback.
 - `akd/` — self-contained replay of the `automatic_knowledge_discovery`
   `kernel_eng2` experiment: 100-problem dataset, AKD prompt/feedback configs,
-  legacy evaluator, and a 3-GPU Slurm launcher. See `akd/README.md`.
+  legacy evaluator, and a 2-GPU Slurm launcher. See `akd/README.md`.
 
 ## AKD `kernel_eng2` replay
 
@@ -47,9 +47,9 @@ SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 USE_STRATEGY=1 \
   sbatch benchmarking/kernelbench/akd/run_slurm.sh
 ```
 
-The AKD launcher uses `akd/evaluate_legacy.py` by default to match the in-flight
-runs. Pass `EVALUATE=benchmarking/kernelbench/evaluate.py` to use the hardened
-evaluator instead.
+The AKD launcher uses the hardened `benchmarking/kernelbench/evaluate.py` by
+default. Pass `EVALUATE=benchmarking/kernelbench/akd/evaluate_legacy.py` to
+reproduce the legacy in-flight policy.
 
 All launchers request scratch (`--gres=...,scratch:...`) and export
 `TMPDIR`, `TORCH_EXTENSIONS_DIR`, `TRITON_CACHE_DIR`,

@@ -12,8 +12,8 @@ from the `optimizer-agent` benchmarking branch.
 | `dataset/` | `dataset/` | 100 `P1..P100` problems, each with `<id>_baseline.py` and `<id>_reference.py` |
 | `prompt_config.json` | `prompt_config_optimizer_agent.json` | AKD kernel improve/debug/strategy prompts |
 | `feedback_config.json` | `feedback_config_optimizer_agent.json` | runtime-based metric and `rules_llm` feedback |
-| `evaluate_legacy.py` | `evaluate.py` | the evaluator used by the in-flight experiments |
-| `run_slurm.sh` | adapted from `run_optimizer_agent.sh` | 3-GPU launcher (TP=2 vLLM + evaluator) |
+| `evaluate_legacy.py` | `evaluate_legacy.py` | the legacy evaluator used by the in-flight experiments |
+| `run_slurm.sh` | adapted from `run_optimizer_agent.sh` | 2-GPU launcher (TP=1 vLLM + evaluator) |
 
 `../evaluate.py` is the hardened, `robust_kernelbench`-backed evaluator. Use it
 for new experiments; use `evaluate_legacy.py` only when reproducing the
@@ -41,11 +41,11 @@ SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 USE_STRATEGY=1 \
   sbatch benchmarking/kernelbench/akd/run_slurm.sh
 ```
 
-Both launchers use the legacy evaluator by default. To use the hardened
-evaluator instead:
+Both launchers use the hardened evaluator by default. To reproduce the
+legacy in-flight policy instead:
 
 ```bash
-EVALUATE=benchmarking/kernelbench/evaluate.py \
+EVALUATE=benchmarking/kernelbench/akd/evaluate_legacy.py \
   sbatch benchmarking/kernelbench/akd/run_slurm.sh
 ```
 
