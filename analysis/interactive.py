@@ -10,7 +10,6 @@ Run:
 """
 
 import argparse
-import math
 from pathlib import Path
 
 import dash
@@ -373,7 +372,7 @@ def kpi_card(label, value, sublabel="", accent="#7aa2f7"):
     )
 
 
-def control_label(text, target, tooltip, placement="right"):
+def control_label(text, target):
     return html.Div(
         [
             html.Span(text, className="control-label"),
@@ -541,7 +540,7 @@ def build_layout():
                         [
                             dbc.Col(
                                 [
-                                    control_label("Metric", "metric-help", "Metric to plot. Combined score is evaluator-defined and higher-is-better: AlgoTune uses speedup, KernelBench legacy uses negative runtime, and hardened KernelBench uses speedup."),
+                                    control_label("Metric", "metric-help"),
                                     dcc.Dropdown(
                                         id="metric-dropdown",
                                         options=[
@@ -556,7 +555,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    control_label("View", "view-help", "Per-iteration shows each round. Cumulative applies best-so-far to score metrics and cumulative sums to token metrics."),
+                                    control_label("View", "view-help"),
                                     dcc.RadioItems(
                                         id="view-filter",
                                         options=[
@@ -571,7 +570,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    control_label("Methods", "methods-help", "Filter by method configuration. Labels encode selection method, samples/cells, strategy, and feedback."),
+                                    control_label("Methods", "methods-help"),
                                     dcc.Dropdown(
                                         id="method-filter",
                                         options=method_options(),
@@ -584,7 +583,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    control_label("Strategy", "strategy-help", "Filter to runs with or without the strategy stage."),
+                                    control_label("Strategy", "strategy-help"),
                                     dcc.Dropdown(
                                         id="strat-filter",
                                         options=[
@@ -599,7 +598,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    control_label("Feedback", "feedback-help", "Filter to runs with or without LLM feedback."),
+                                    control_label("Feedback", "feedback-help"),
                                     dcc.Dropdown(
                                         id="feed-filter",
                                         options=[
@@ -619,7 +618,7 @@ def build_layout():
                         [
                             dbc.Col(
                                 [
-                                    control_label("Color by", "color-help", "Color lines by method, strategy, or feedback. Method is best when comparing different configurations."),
+                                    control_label("Color by", "color-help"),
                                     dcc.Dropdown(
                                         id="color-grouping",
                                         options=[
@@ -635,7 +634,7 @@ def build_layout():
                             ),
                             dbc.Col(
                                 [
-                                    control_label("Scale", "scale-help", "Logarithmic Y axis helps when a few tasks have very large speedups."),
+                                    control_label("Scale", "scale-help"),
                                     dcc.Checklist(
                                         id="log-scale",
                                         options=[{"label": "Log Y axis", "value": "log"}],
@@ -780,7 +779,7 @@ def build_layout():
                                 [
                                     dbc.Col(
                                         [
-                                            control_label("Task", "lineage-help", "Select a task to inspect parent → child candidates, score deltas, and token usage."),
+                                            control_label("Task", "lineage-help"),
                                             dcc.Dropdown(
                                                 id="lineage-task",
                                                 options=lineage_options,
