@@ -14,8 +14,9 @@ def read_usage(path):
             record = json.loads(line)
         except ValueError:
             continue
-        for key in totals:
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
             totals[key] += int(record.get(key, 0) or 0)
+        totals["calls"] += 1
     return totals
 
 
