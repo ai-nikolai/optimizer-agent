@@ -123,6 +123,9 @@ def main():
         )
         patch_evaluator(dst / "evaluator.py", args.algotune_root)
         patch_config(dst / "config.yaml", args, int(row.get("n", 100)))
+        override = HERE / "overrides" / f"{name}_initial_program.py"
+        if override.exists():
+            shutil.copyfile(override, dst / "initial_program.py")
         (dst / "meta.json").write_text(
             json.dumps(
                 {
