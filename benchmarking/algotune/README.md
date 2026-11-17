@@ -45,7 +45,20 @@ TASK_LIST=medium LIMIT=6 sbatch benchmarking/algotune/run_slurm.sh
 
 ## Dataset
 
-The official AlgoTune dataset already exists:
+The full lightweight 154-task manifest is published at:
+
+```text
+https://huggingface.co/datasets/ai-nikolai/AlgoTuneTasks
+```
+
+Download it with:
+
+```bash
+huggingface-cli download ai-nikolai/AlgoTuneTasks \
+  --repo-type dataset --local-dir AlgoTuneTasks
+```
+
+The official AlgoTune dataset also exists:
 https://huggingface.co/datasets/oripress/AlgoTune
 
 We use the official task definitions and keep only lightweight manifests

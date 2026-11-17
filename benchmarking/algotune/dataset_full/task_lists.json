@@ -1,0 +1,36 @@
+{
+  "fast": [
+    "svm",
+    "max_common_subgraph",
+    "cyclic_independent_set"
+  ],
+  "medium": [
+    "svm",
+    "max_common_subgraph",
+    "cyclic_independent_set",
+    "nmf",
+    "communicability",
+    "eigenvalues_real"
+  ],
+  "all": [
+    "svm",
+    "max_common_subgraph",
+    "count_riemann_zeta_zeros",
+    "ode_stiff_robertson",
+    "nmf",
+    "cyclic_independent_set",
+    "communicability",
+    "eigenvalues_real"
+  ],
+  "compute_heavy": [
+    "count_riemann_zeta_zeros",
+    "ode_stiff_robertson",
+    "nmf",
+    "eigenvalues_real"
+  ],
+  "graph_tasks": [
+    "max_common_subgraph",
+    "cyclic_independent_set",
+    "communicability"
+  ]
+}
