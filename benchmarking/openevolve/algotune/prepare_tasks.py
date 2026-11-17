@@ -34,6 +34,12 @@ def parse_args():
     parser.add_argument("--source", default=str(DEFAULT_SOURCE))
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     parser.add_argument("--output", default=str(HERE / "tasks"))
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=1,
+        help="Save an OpenEvolve checkpoint every N iterations.",
+    )
     parser.add_argument("--tasks", default=None, help="Comma-separated subset")
     parser.add_argument("--clean", action="store_true")
     parser.add_argument("--model-url", default="http://localhost:30000/v1")
@@ -85,6 +91,7 @@ def patch_config(path, args, n):
     algotune["num_runs"] = 3
     algotune["warmup_runs"] = 1
     config["max_iterations"] = 100
+    config["checkpoint_interval"] = args.checkpoint_interval
     path.write_text(yaml.safe_dump(config, sort_keys=False))
 
 

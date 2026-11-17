@@ -112,14 +112,14 @@ if [ -n "${TASKS}" ]; then EXTRA+=(--tasks "${TASKS}"); fi
 
 if [ "${PREPARE}" = "1" ]; then
     echo "=== preparing OpenEvolve AlgoTune tasks at $(date +%T)"
-    PREP_ARGS=(--clean --model-url "http://localhost:${PORT}/v1" --model-name "${MODEL_NAME}" --max-tokens "${MAX_TOKENS}")
+    PREP_ARGS=(--clean --output "${TASKS_DIR}" --checkpoint-interval "${CHECKPOINT_INTERVAL}" --model-url "http://localhost:${PORT}/v1" --model-name "${MODEL_NAME}" --max-tokens "${MAX_TOKENS}")
     if [ -n "${TASKS}" ]; then PREP_ARGS+=(--tasks "${TASKS}"); fi
     python benchmarking/openevolve/algotune/prepare_tasks.py "${PREP_ARGS[@]}"
 fi
 
 echo "=== OpenEvolve AlgoTune: iterations=${ITERATIONS} at $(date +%T)"
 python benchmarking/openevolve/algotune/run_tasks.py \
-    --tasks-dir benchmarking/openevolve/algotune/tasks \
+    --tasks-dir "${TASKS_DIR}" \
     --iterations "${ITERATIONS}" \
     --openevolve-root "${OPENEVOLVE_ROOT}" \
     --algotune-root "${ALGOTUNE_ROOT}" \
