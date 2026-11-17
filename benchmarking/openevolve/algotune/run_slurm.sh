@@ -23,6 +23,9 @@ REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
 OPENEVOLVE_ROOT="/hx2-weka/home/nr1713/openevolve"
 ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-/hx2-weka/home/nr1713/AlgoTune}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
+if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
+    JOB_ID="${JOB_ID}_a${SLURM_ARRAY_TASK_ID}"
+fi
 SCRATCH="${TMPDIR:-/tmp}/openevolve_algotune_${JOB_ID}"
 mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/hf_home" "${SCRATCH}/hf_datasets" \
     "${SCRATCH}/numba" "${SCRATCH}/mpl" "${SCRATCH}/torch_extensions" \
