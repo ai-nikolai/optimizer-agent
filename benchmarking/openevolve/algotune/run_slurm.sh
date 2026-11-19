@@ -112,6 +112,10 @@ export PYTHONPATH="${REPO}:${OPENEVOLVE_ROOT}:${ALGOTUNE_ROOT}:${PYTHONPATH:-}"
 
 EXTRA=()
 if [ -n "${TASKS}" ]; then EXTRA+=(--tasks "${TASKS}"); fi
+if [ -n "${START:-}" ]; then EXTRA+=(--start "${START}"); fi
+if [ -n "${LIMIT:-}" ]; then EXTRA+=(--limit "${LIMIT}"); fi
+if [ -n "${SKIP_COMPLETED:-}" ]; then EXTRA+=(--skip-completed "${SKIP_COMPLETED}"); fi
+if [ -n "${TIMEOUT_PER_TASK:-}" ]; then EXTRA+=(--timeout-per-task "${TIMEOUT_PER_TASK}"); fi
 
 if [ "${PREPARE}" = "1" ]; then
     echo "=== preparing OpenEvolve AlgoTune tasks at $(date +%T)"

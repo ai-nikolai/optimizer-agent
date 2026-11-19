@@ -13,6 +13,7 @@ Example:
 
 import argparse
 import csv
+import glob
 import json
 import os
 import subprocess
@@ -41,6 +42,19 @@ def parse_args():
         "--output", default=str(REPO_ROOT / "experiments/openevolve_algotune/results.csv")
     )
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--start", type=int, default=0, help="Skip this many tasks after filtering")
+    parser.add_argument("--limit", type=int, default=None, help="Run at most this many tasks")
+    parser.add_argument(
+        "--skip-completed",
+        default=None,
+        help="Comma-separated results CSV paths/globs; tasks already ok there are skipped",
+    )
+    parser.add_argument(
+        "--timeout-per-task",
+        type=float,
+        default=None,
+        help="Per-task wall clock budget in seconds (default: --timeout)",
+    )
     return parser.parse_args()
 
 
@@ -64,10 +78,31 @@ def main():
     if args.tasks:
         wanted = {name.strip() for name in args.tasks.split(",") if name.strip()}
     tasks = discover_tasks(tasks_dir, wanted)
+
+    completed = set()
+    for path in (args.skip_completed or "").split(","):
+        path = path.strip()
+        if not path:
+            continue
+        for csv_path in sorted(glob.glob(path)):
+            if Path(csv_path).exists():
+                with open(csv_path, newline="", encoding="utf-8") as handle:
+                    for row in csv.DictReader(handle):
+                        if row.get("status") == "ok":
+                            completed.add(row["task"])
+    if completed:
+        tasks = [task for task in tasks if task.name not in completed]
+        print(f"skipping {len(completed)} completed tasks")
+
+    if args.start:
+        tasks = tasks[args.start :]
+    if args.limit is not None:
+        tasks = tasks[: args.limit]
     if not tasks:
-        raise SystemExit(f"no OpenEvolve tasks found under {tasks_dir}")
+        raise SystemExit(f"no OpenEvolve tasks to run under {tasks_dir}")
 
     output = Path(args.output)
+    append = output.exists() and not args.overwrite
     output.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "task",
@@ -101,9 +136,10 @@ def main():
         }
     )
 
-    with open(output, "w", newline="", encoding="utf-8") as handle:
+    with open(output, "w" if args.overwrite or not append else "a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
+        if not append:
+            writer.writeheader()
         for index, task_dir in enumerate(tasks, 1):
             name = task_dir.name
             meta_path = task_dir / "meta.json"
@@ -142,7 +178,7 @@ def main():
                     env=task_env,
                     capture_output=True,
                     text=True,
-                    timeout=args.timeout,
+                    timeout=args.timeout_per_task or args.timeout,
                 )
                 if proc.returncode != 0:
                     status = "failed"

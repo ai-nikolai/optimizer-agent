@@ -31,6 +31,8 @@ export ITERATIONS="${ITERATIONS:-20}"
 export CHECKPOINT_INTERVAL="${CHECKPOINT_INTERVAL:-1}"
 export START
 export LIMIT="${TASKS_PER_SHARD}"
+export TIMEOUT_PER_TASK="${TIMEOUT_PER_TASK:-10800}"
+export SKIP_COMPLETED="${SKIP_COMPLETED:-}"
 export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/openevolve_algotune_full_${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}_shard${SHARD_INDEX}}"
 
 echo "=== OpenEvolve AlgoTune full shard ${SHARD_INDEX}/${NUM_SHARDS}: start=${START} limit=${LIMIT} total=${TOTAL_TASKS}"
