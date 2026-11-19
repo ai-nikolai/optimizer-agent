@@ -43,6 +43,7 @@ def summarize(name, scores, tokens, calls, tasks_total, valid, done=None):
     return {
         "name": name,
         "tasks": f"{done}/{tasks_total}",
+        "done": done,
         "valid": len(scores),
         "median": statistics.median(scores) if scores else None,
         "fast": sum(s > 1 for s in scores),
@@ -80,9 +81,10 @@ def akd_summaries(name, run_dir, tasks_total=100):
 def algotune_csv(name, pattern, tasks_total=154):
     """optimizer-agent AlgoTune driver CSVs: exactly one row per task."""
     scores, tokens, calls = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, 0
-    valid = []
+    valid, done = [], 0
     for path in sorted(glob.glob(pattern)):
         for row in csv.DictReader(open(path, newline="", encoding="utf-8")):
+            done += 1
             for key in tokens:
                 tokens[key] += int(float(row.get(key) or 0))
             calls += int(float(row.get("llm_calls") or 0))
@@ -90,7 +92,7 @@ def algotune_csv(name, pattern, tasks_total=154):
             if speedup:
                 scores.append(speedup)
                 valid.append(row.get("task"))
-    return summarize(name, scores, tokens, calls, tasks_total, valid)
+    return summarize(name, scores, tokens, calls, tasks_total, valid, done=done)
 
 
 def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale=1.0):
@@ -138,11 +140,13 @@ def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale
 
 def v11_summary(name, run_dir, tasks_total=100):
     best, tokens_in, tokens_out = {}, 0, 0
+    evaluated = set()
     for trial in sorted(run_dir.glob("trial_*")):
         evals = trial / "evaluations.csv"
         gens = trial / "generations.csv"
         if evals.exists():
             for row in csv.DictReader(open(evals, newline="", encoding="utf-8")):
+                evaluated.add(row.get("problem_id"))
                 if str(row.get("correctness")).lower() != "true":
                     continue
                 try:
@@ -161,7 +165,7 @@ def v11_summary(name, run_dir, tasks_total=100):
                 except (TypeError, ValueError, SyntaxError):
                     pass
     tokens = {"prompt_tokens": tokens_in, "completion_tokens": tokens_out, "total_tokens": tokens_in + tokens_out}
-    return summarize(name, list(best.values()), tokens, 0, tasks_total, list(best))
+    return summarize(name, list(best.values()), tokens, 0, tasks_total, list(best), done=len(evaluated) or tasks_total)
 
 
 def fmt(value, digits=3):
@@ -173,14 +177,22 @@ def fmt(value, digits=3):
 
 
 def render(rows):
-    header = "| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Calls |"
-    line = "|---|---|---|---|---|---|---|---|---|"
-    out = [header, line]
+    header = (
+        "| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out "
+        "| Tokens total | Tokens/task | Calls |"
+    )
+    line = "|---|---|---|---|---|---|---|---|---|---|"
+    out = []
+    current = None
     for row in rows:
+        if row["group"] != current:
+            current = row["group"]
+            out.extend(["", f"### {current}", "", header, line])
+        per_task = row["tokens_total"] / row["done"] if row["done"] else None
         out.append(
             f"| {row['name']} | {row['tasks']} | {row['valid']} | {fmt(row['median'])} | "
             f"{row['fast']} | {fmt(row['tokens_in'], 0)} | {fmt(row['tokens_out'], 0)} | "
-            f"{fmt(float(row['tokens_total']), 0)} | {fmt(float(row['calls']), 0)} |"
+            f"{fmt(float(row['tokens_total']), 0)} | {fmt(per_task, 0)} | {fmt(float(row['calls']), 0)} |"
         )
     return "\n".join(out)
 
@@ -190,27 +202,36 @@ def main():
     parser.add_argument("--markdown", action="store_true", help="Only print the table")
     args = parser.parse_args()
 
+    # Grouped by task set; within a group the methods go from simplest search
+    # (repair-only, one sample per round) to hardest (OpenEvolve's own search).
+    algotune = "AlgoTune (154 tasks)"
+    kernelbench = "KernelBench level 1 (100 tasks)"
     rows = [
-        akd_summaries("AKD KernelBench sequential", AKD / "experiment_v5_1_robust_tokens_optagent"),
-        akd_summaries("AKD KernelBench advanced", AKD / "experiment_v5_1_newsettings_tokens_optagent"),
-        algotune_csv("AlgoTune sequential 10 rounds", str(REPO / "experiments/algotune_full_1689335_shard*/results.csv")),
-        algotune_csv("AlgoTune advanced 4 rounds", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv")),
+        algotune_csv("optimizer-agent sequential (10 rounds, bestN_last)", str(REPO / "experiments/algotune_full_1689335_shard*/results.csv")),
+        algotune_csv("optimizer-agent advanced (4 rounds, map_elites x3)", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv")),
         openevolve_csv(
-            "OpenEvolve KernelBench",
+            "OpenEvolve (20 iterations, checkpoint/iter)",
+            str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
+            "task",
+            154,
+        ),
+        akd_summaries("optimizer-agent sequential (5 rounds, bestN_last)", AKD / "experiment_v5_1_robust_tokens_optagent"),
+        akd_summaries("optimizer-agent advanced (5 rounds, map_elites x3)", AKD / "experiment_v5_1_newsettings_tokens_optagent"),
+        openevolve_csv(
+            "OpenEvolve (50 iterations)",
             str(REPO / "experiments/openevolve_kernelbench_full_1670750_shard*/results.csv"),
             "problem_id",
             100,
             cumulative_usage=False,
         ),
-        openevolve_csv(
-            "OpenEvolve AlgoTune",
-            str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
-            "task",
-            154,
-        ),
-        v11_summary("robust_kernelbench v11 (orig)", KERNELBENCH / "experiments/exp_local_L1_v11_0_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
-        v11_summary("robust_kernelbench v11 fair", KERNELBENCH / "experiments/exp_local_L1_v11_1_fair_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
+        v11_summary("robust_kernelbench v11 (3-GPU TP=2)", KERNELBENCH / "experiments/exp_local_L1_v11_0_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
+        v11_summary("robust_kernelbench v11 fair (2-GPU TP=1)", KERNELBENCH / "experiments/exp_local_L1_v11_1_fair_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
     ]
+    for row in rows[:3]:
+        row["group"] = algotune
+    for row in rows[3:]:
+        row["group"] = kernelbench
+
     print(render(rows))
     if not args.markdown:
         print()

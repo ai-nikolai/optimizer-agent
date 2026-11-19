@@ -97,18 +97,28 @@ reported 87.0M this way; the true spend was 20.3M).
 
 ## Results
 
-Generated with `python benchmarking/aggregate_results.py`.
+Generated with `python benchmarking/aggregate_results.py`. Rows are grouped by
+task set and ordered from the simplest search (repair-only, one sample per
+round) to the hardest (OpenEvolve's native MAP-Elites). `Tokens/task` is the
+total spend divided by the number of tasks actually run.
 
-| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Calls |
-|---|---|---|---|---|---|---|---|---|
-| AKD KernelBench sequential (5 rounds) | 100/100 | 57 | 1.000 | 15 | 4,209,864 | 1,974,518 | 6,184,382 | 1,670 |
-| AKD KernelBench advanced (5 rounds, `map_elites`) | 89/100 | 57 | 1.000 | 13 | 8,220,885 | 3,757,135 | 11,978,020 | 3,330 |
-| AlgoTune sequential (10 rounds) | 154/154 | 136 | 1.042 | 125 | 10,095,168 | 1,754,788 | 11,849,956 | 3,080 |
-| AlgoTune advanced (4 rounds, `map_elites`) | 154/154 | 141 | 1.037 | 127 | 12,719,352 | 2,280,951 | 15,000,303 | 4,498 |
-| OpenEvolve KernelBench (50 iterations) | 100/100 | 100 | 1.000 | 7 | 17,868,685 | 6,349,661 | 24,218,346 | 4,999 |
-| OpenEvolve AlgoTune (20 iterations) | 22/154 | 22 | 1.008 | 18 | 2,375,793 | 650,366 | 3,026,159 | 335 |
-| robust_kernelbench v11, 3-GPU TP=2 | 100/100 | 11 | 0.437 | 2 | 1,044,914 | 563,336 | 1,608,250 | — |
-| robust_kernelbench v11 fair, 2-GPU TP=1 | 100/100 | 0 | — | 0 | 1,031,377 | 572,217 | 1,603,594 | — |
+### AlgoTune (154 tasks)
+
+| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Tokens/task | Calls |
+|---|---|---|---|---|---|---|---|---|---|
+| optimizer-agent sequential (10 rounds, `bestN_last`) | 154/154 | 136 | 1.042 | 125 | 10,095,168 | 1,754,788 | 11,849,956 | 76,948 | 3,080 |
+| optimizer-agent advanced (4 rounds, `map_elites` x3) | 154/154 | 141 | 1.037 | 127 | 12,719,352 | 2,280,951 | 15,000,303 | 97,405 | 4,498 |
+| OpenEvolve (20 iterations, checkpoint/iter) | 22/154 | 22 | 1.008 | 18 | 2,390,437 | 653,641 | 3,044,078 | 138,367 | 338 |
+
+### KernelBench level 1 (100 tasks)
+
+| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Tokens/task | Calls |
+|---|---|---|---|---|---|---|---|---|---|
+| optimizer-agent sequential (5 rounds, `bestN_last`) | 100/100 | 57 | 1.000 | 15 | 4,209,864 | 1,974,518 | 6,184,382 | 61,844 | 1,670 |
+| optimizer-agent advanced (5 rounds, `map_elites` x3) | 89/100 | 57 | 1.000 | 13 | 8,220,885 | 3,757,135 | 11,978,020 | 134,584 | 3,330 |
+| OpenEvolve (50 iterations) | 100/100 | 100 | 1.000 | 7 | 17,868,685 | 6,349,661 | 24,218,346 | 242,183 | 4,999 |
+| robust_kernelbench v11 (3-GPU TP=2) | 90/100 | 11 | 0.437 | 2 | 1,044,914 | 563,336 | 1,608,250 | 17,869 | — |
+| robust_kernelbench v11 fair (2-GPU TP=1) | 91/100 | 0 | — | 0 | 1,031,377 | 572,217 | 1,603,594 | 17,622 | — |
 
 Notes:
 
@@ -117,7 +127,9 @@ Notes:
   tasks. `1709405` runs the remaining 132 once each with the fixed sharding.
 - The 22 duplicated tasks were run independently, not resumed: each attempt
   produced its own best program (19 of 22 differ). Their single-attempt scores
-  are lower than a best-of-8 selection (median 1.008 vs 1.054).
+  are lower than a best-of-8 selection (median 1.008 vs 1.054). All attempts
+  together spent 20.6M tokens on those 22 tasks, against 3.0M for one attempt
+  each; only the latter is counted above.
 - AKD KernelBench validity is low (57/100): 6 compile failures, 12 load
   failures and 25 correctness failures on the best candidate per task.
 - Outliers above 10x (e.g. `communicability` 116x, `count_riemann_zeta_zeros`
