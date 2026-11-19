@@ -79,3 +79,48 @@ PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/openevolve/kernelbench/run_sl
 
 Runs that completed before the tracking patch do not have exact token counts;
 the vLLM logs only report aggregate throughput, not per-request usage.
+
+### De-duplicating repeated attempts
+
+`token_usage.jsonl` is appended by every attempt on a task, so an OpenEvolve
+driver row holds the **cumulative** total for that task, not that attempt's
+spend. Summing rows across shards therefore over-counts (run `1689375`
+reported 87.0M this way; the true spend was 20.3M).
+
+`benchmarking/aggregate_results.py` produces the canonical table. Its rules:
+
+- **optimizer-agent** runs are one row per task, so totals are summed directly.
+- **OpenEvolve** runs count one attempt per task: the first attempt with a
+  measurable speedup, and tokens = cumulative total / number of attempts.
+  The total actually spent across every attempt is printed separately.
+- A task counts as valid when its measured speedup is finite and positive.
+
+## Results
+
+Generated with `python benchmarking/aggregate_results.py`.
+
+| Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Calls |
+|---|---|---|---|---|---|---|---|---|
+| AKD KernelBench sequential (5 rounds) | 100/100 | 57 | 1.000 | 15 | 4,209,864 | 1,974,518 | 6,184,382 | 1,670 |
+| AKD KernelBench advanced (5 rounds, `map_elites`) | 89/100 | 57 | 1.000 | 13 | 8,220,885 | 3,757,135 | 11,978,020 | 3,330 |
+| AlgoTune sequential (10 rounds) | 154/154 | 136 | 1.042 | 125 | 10,095,168 | 1,754,788 | 11,849,956 | 3,080 |
+| AlgoTune advanced (4 rounds, `map_elites`) | 154/154 | 141 | 1.037 | 127 | 12,719,352 | 2,280,951 | 15,000,303 | 4,498 |
+| OpenEvolve KernelBench (50 iterations) | 100/100 | 100 | 1.000 | 7 | 17,868,685 | 6,349,661 | 24,218,346 | 4,999 |
+| OpenEvolve AlgoTune (20 iterations) | 22/154 | 22 | 1.008 | 18 | 2,375,793 | 650,366 | 3,026,159 | 335 |
+| robust_kernelbench v11, 3-GPU TP=2 | 100/100 | 11 | 0.437 | 2 | 1,044,914 | 563,336 | 1,608,250 | — |
+| robust_kernelbench v11 fair, 2-GPU TP=1 | 100/100 | 0 | — | 0 | 1,031,377 | 572,217 | 1,603,594 | — |
+
+Notes:
+
+- The OpenEvolve AlgoTune row is partial. Run `1689375` was mis-sharded (all 8
+  shards started at task 1), producing 8 independent attempts on the first 22
+  tasks. `1709405` runs the remaining 132 once each with the fixed sharding.
+- The 22 duplicated tasks were run independently, not resumed: each attempt
+  produced its own best program (19 of 22 differ). Their single-attempt scores
+  are lower than a best-of-8 selection (median 1.008 vs 1.054).
+- AKD KernelBench validity is low (57/100): 6 compile failures, 12 load
+  failures and 25 correctness failures on the best candidate per task.
+- Outliers above 10x (e.g. `communicability` 116x, `count_riemann_zeta_zeros`
+  510x) should be treated with suspicion: they are consistent with solutions
+  that exploit the in-process timing harness (caching across the 5 trials).
+  The median is the headline number.
