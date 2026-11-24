@@ -103,11 +103,13 @@ def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale
     attempts and is divided by the attempt count.
     """
     attempts = defaultdict(list)
-    for path in sorted(glob.glob(pattern)):
-        shard = int(path.rsplit("_shard", 1)[-1].split("/")[0]) if "_shard" in path else 0
-        for row in csv.DictReader(open(path, newline="", encoding="utf-8")):
-            task = row.get(key) or row.get("task")
-            attempts[task].append((shard, row))
+    patterns = pattern if isinstance(pattern, (list, tuple)) else [pattern]
+    for single in patterns:
+        for path in sorted(glob.glob(single)):
+            shard = int(path.rsplit("_shard", 1)[-1].split("/")[0]) if "_shard" in path else 0
+            for row in csv.DictReader(open(path, newline="", encoding="utf-8")):
+                task = row.get(key) or row.get("task")
+                attempts[task].append((shard, row))
 
     scores, tokens, calls = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, 0.0
     valid, spent_total = [], 0
@@ -132,7 +134,7 @@ def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale
                 valid.append(task)
                 break
 
-    result = summarize(name, scores, tokens, calls, tasks_total, valid)
+    result = summarize(name, scores, tokens, calls, tasks_total, valid, done=len(attempts))
     result["tokens_all_attempts"] = spent_total * scale
     result["attempts"] = len(attempts)
     return result
@@ -211,7 +213,10 @@ def main():
         algotune_csv("optimizer-agent advanced (4 rounds, map_elites x3)", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv")),
         openevolve_csv(
             "OpenEvolve (20 iterations, checkpoint/iter)",
-            str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
+            [
+                str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
+                str(REPO / "experiments/openevolve_algotune_resume_1709405_shard*/results.csv"),
+            ],
             "task",
             154,
         ),

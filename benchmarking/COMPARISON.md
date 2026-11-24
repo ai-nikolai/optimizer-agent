@@ -108,30 +108,43 @@ total spend divided by the number of tasks actually run.
 |---|---|---|---|---|---|---|---|---|---|
 | optimizer-agent sequential (10 rounds, `bestN_last`) | 154/154 | 136 | 1.042 | 125 | 10,095,168 | 1,754,788 | 11,849,956 | 76,948 | 3,080 |
 | optimizer-agent advanced (4 rounds, `map_elites` x3) | 154/154 | 141 | 1.037 | 127 | 12,719,352 | 2,280,951 | 15,000,303 | 97,405 | 4,498 |
-| OpenEvolve (20 iterations, checkpoint/iter) | 22/154 | 22 | 1.008 | 18 | 2,390,437 | 653,641 | 3,044,078 | 138,367 | 338 |
+| OpenEvolve (20 iterations, checkpoint/iter) | 154/154 | 129 | 1.035 | 115 | 19,525,944 | 5,099,172 | 24,625,117 | 159,903 | 2,823 |
 
 ### KernelBench level 1 (100 tasks)
 
 | Run | Tasks | Valid | Median | fast@1 | Tokens in | Tokens out | Tokens total | Tokens/task | Calls |
 |---|---|---|---|---|---|---|---|---|---|
 | optimizer-agent sequential (5 rounds, `bestN_last`) | 100/100 | 57 | 1.000 | 15 | 4,209,864 | 1,974,518 | 6,184,382 | 61,844 | 1,670 |
-| optimizer-agent advanced (5 rounds, `map_elites` x3) | 89/100 | 57 | 1.000 | 13 | 8,220,885 | 3,757,135 | 11,978,020 | 134,584 | 3,330 |
+| optimizer-agent advanced (5 rounds, `map_elites` x3) | 100/100 | 62 | 1.000 | 15 | 9,417,163 | 4,310,096 | 13,727,259 | 137,273 | 3,770 |
 | OpenEvolve (50 iterations) | 100/100 | 100 | 1.000 | 7 | 17,868,685 | 6,349,661 | 24,218,346 | 242,183 | 4,999 |
 | robust_kernelbench v11 (3-GPU TP=2) | 90/100 | 11 | 0.437 | 2 | 1,044,914 | 563,336 | 1,608,250 | 17,869 | — |
 | robust_kernelbench v11 fair (2-GPU TP=1) | 91/100 | 0 | — | 0 | 1,031,377 | 572,217 | 1,603,594 | 17,622 | — |
 
+Coverage of the OpenEvolve AlgoTune run (154 attempted):
+
+```text
+129  scored           correctness passed and timed
+ 15  best program incorrect (run completed, correctness_score = 0)
+ 10  evaluator stage-2 timeout (600 s per candidate, task killed at 3 h)
+```
+
+The 10 timeouts are `channel_capacity`, `chebyshev_center`, `lasso`, `lp_box`,
+`lp_centering`, `lyapunov_stability`, `minimum_volume_ellipsoid`,
+`ode_lorenz96_nonchaotic`, `ode_stiff_robertson`, `qp`. Their token counts are
+tiny (5k-155k) because almost all of the 3 h went into evaluator timeouts, so
+they are a harness limit rather than a search-budget result.
+
 Notes:
 
-- The OpenEvolve AlgoTune row is partial. Run `1689375` was mis-sharded (all 8
-  shards started at task 1), producing 8 independent attempts on the first 22
-  tasks. `1709405` runs the remaining 132 once each with the fixed sharding.
-- The 22 duplicated tasks were run independently, not resumed: each attempt
-  produced its own best program (19 of 22 differ). Their single-attempt scores
-  are lower than a best-of-8 selection (median 1.008 vs 1.054). All attempts
-  together spent 20.6M tokens on those 22 tasks, against 3.0M for one attempt
-  each; only the latter is counted above.
-- AKD KernelBench validity is low (57/100): 6 compile failures, 12 load
-  failures and 25 correctness failures on the best candidate per task.
+- Run `1689375` was mis-sharded (all 8 shards started at task 1), producing 8
+  independent attempts on the first 22 tasks; `1709405` ran the remaining 132
+  once each with fixed sharding. The 22 duplicated tasks were run
+  independently, not resumed (19 of 22 produced a different best program), so
+  only one attempt each is counted above. All attempts together spent 42.2M
+  tokens, against 24.6M for one attempt per task.
+- AKD KernelBench validity is low (57 and 62 of 100): the failures are 6 compile
+  failures, 12 load failures and 25 correctness failures on the best candidate
+  per task (sequential profile).
 - Outliers above 10x (e.g. `communicability` 116x, `count_riemann_zeta_zeros`
   510x) should be treated with suspicion: they are consistent with solutions
   that exploit the in-process timing harness (caching across the 5 trials).
