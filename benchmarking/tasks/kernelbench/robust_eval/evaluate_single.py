@@ -432,7 +432,7 @@ def run_and_check_correctness(
                     output, output_new, atol=atol, rtol=rtol, metadata=metadata
                 )
                 if not matched:
-                    exception_str, metadata = register_and_format_exception(
+                    metadata, exception_str = register_and_format_exception(
                         "correctness_issue", comparison_message, metadata
                     )
                     metadata["correctness_issue"] = "Output mismatch"
