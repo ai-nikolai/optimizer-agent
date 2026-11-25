@@ -26,8 +26,8 @@ REPO_ROOT = HERE.parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from benchmarking.agents.openevolve.common import parse_best, read_usage  # noqa: E402
-DEFAULT_OPENEVOLVE_ROOT = Path("/hx2-weka/home/nr1713/openevolve")
-DEFAULT_ALGOTUNE_ROOT = "/hx2-weka/home/nr1713/AlgoTune"
+DEFAULT_OPENEVOLVE_ROOT = Path(str(Path.home() / "openevolve"))
+DEFAULT_ALGOTUNE_ROOT = str(Path.home() / "AlgoTune")
 
 
 def parse_args():

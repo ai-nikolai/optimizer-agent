@@ -31,7 +31,7 @@ MARKER = "=== Evaluation Result ==="
 # The evaluator is robust_kernelbench's own; point ROBUST_KERNELBENCH_ROOT at
 # that checkout (the launchers export it).
 ROBUST_KB_ROOT = Path(
-    os.environ.get("ROBUST_KERNELBENCH_ROOT", "/hx2-weka/home/nr1713/robust_kernelbench")
+    os.environ.get("ROBUST_KERNELBENCH_ROOT", str(Path.home() / "robust_kernelbench"))
 )
 if str(ROBUST_KB_ROOT) not in sys.path:
     sys.path.insert(0, str(ROBUST_KB_ROOT))

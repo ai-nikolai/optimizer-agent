@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=optagent_algotune_baseline
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_algotune_baseline_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_algotune_baseline_%j.err
+#SBATCH --output=logs/optagent_algotune_baseline_%j.out
+#SBATCH --error=logs/optagent_algotune_baseline_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --partition=small
 #SBATCH --ntasks=1
@@ -16,8 +15,11 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
-ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-/hx2-weka/home/nr1713/AlgoTune}"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ ! -d "${REPO}/benchmarking" ] && [ "${REPO}" != "/" ]; do
+    REPO="$(dirname "${REPO}")"
+done
+ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-$HOME/AlgoTune}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 SCRATCH="${TMPDIR:-/tmp}/optagent_algotune_baseline_${JOB_ID}"
 mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/hf_home" "${SCRATCH}/hf_datasets" \
@@ -31,7 +33,7 @@ export MPLCONFIGDIR="${SCRATCH}/mpl"
 cd "${REPO}"
 mkdir -p logs experiments
 
-source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
+source "${CONDA_SH:-$HOME/miniconda3/etc/profile.d/conda.sh}"
 conda activate env_kb2
 export PYTHONPATH="${REPO}:${ALGOTUNE_ROOT}:${PYTHONPATH:-}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"

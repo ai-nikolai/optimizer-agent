@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=optagent_cuda
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-simple
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_cuda_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-simple/logs/optagent_cuda_%j.err
+#SBATCH --output=logs/optagent_cuda_%j.out
+#SBATCH --error=logs/optagent_cuda_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
@@ -16,7 +15,7 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-simple"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-Coder-30B-A3B-Instruct}"
 PORT="${PORT:-30000}"
@@ -26,7 +25,7 @@ EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_cuda_${JOB_ID}}"
 cd "${REPO}"
 mkdir -p logs experiments
 
-source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
+source "${CONDA_SH:-$HOME/miniconda3/etc/profile.d/conda.sh}"
 conda activate env_vllm30
 
 export CUDA_VISIBLE_DEVICES=0

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=openevolve_algotune_resume
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_algotune_resume_%A_%a.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_algotune_resume_%A_%a.err
+#SBATCH --output=logs/openevolve_algotune_resume_%A_%a.out
+#SBATCH --error=logs/openevolve_algotune_resume_%A_%a.err
 #SBATCH --time=18:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1,scratch:100g
@@ -18,7 +17,10 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ ! -d "${REPO}/benchmarking" ] && [ "${REPO}" != "/" ]; do
+    REPO="$(dirname "${REPO}")"
+done
 PREVIOUS="${PREVIOUS:-${REPO}/experiments/openevolve_algotune_full_1689375_shard*/results.csv}"
 NUM_SHARDS="${NUM_SHARDS:-8}"
 SHARD_INDEX="${SLURM_ARRAY_TASK_ID:-0}"

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=openevolve_algotune
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_algotune_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_algotune_%j.err
+#SBATCH --output=logs/openevolve_algotune_%j.out
+#SBATCH --error=logs/openevolve_algotune_%j.err
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1,scratch:100g
@@ -19,9 +18,12 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
-OPENEVOLVE_ROOT="/hx2-weka/home/nr1713/openevolve"
-ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-/hx2-weka/home/nr1713/AlgoTune}"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ ! -d "${REPO}/benchmarking" ] && [ "${REPO}" != "/" ]; do
+    REPO="$(dirname "${REPO}")"
+done
+OPENEVOLVE_ROOT="$HOME/openevolve"
+ALGOTUNE_ROOT="${ALGOTUNE_ROOT:-$HOME/AlgoTune}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
     JOB_ID="${JOB_ID}_a${SLURM_ARRAY_TASK_ID}"
@@ -52,7 +54,7 @@ EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/openevolve_algotune_${JOB_ID}}"
 cd "${REPO}"
 mkdir -p logs experiments
 
-source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
+source "${CONDA_SH:-$HOME/miniconda3/etc/profile.d/conda.sh}"
 conda activate env_vllm30
 
 export CUDA_VISIBLE_DEVICES=0

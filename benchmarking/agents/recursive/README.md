@@ -31,7 +31,7 @@ hashed subdirectory there, keeping the 1 TB home filesystem free.
 Robust replication (`bestN_last`):
 
 ```bash
-cd /hx2-weka/home/nr1713/optimizer-agent-benchmarking
+cd <optimizer-agent checkout>
 EXPERIMENT_NAME=experiment_v5_0_robust_kb_optagent_replay \
   sbatch benchmarking/agents/recursive/run_slurm.sh
 ```
@@ -39,7 +39,7 @@ EXPERIMENT_NAME=experiment_v5_0_robust_kb_optagent_replay \
 New settings (`map_elites`, dynamic, 3 cells, strategy):
 
 ```bash
-cd /hx2-weka/home/nr1713/optimizer-agent-benchmarking
+cd <optimizer-agent checkout>
 EXPERIMENT_NAME=experiment_v5_0_newsettings_optagent_replay \
 SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 USE_STRATEGY=1 \
   sbatch benchmarking/agents/recursive/run_slurm.sh

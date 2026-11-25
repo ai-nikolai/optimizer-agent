@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=openevolve_kb
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_kb_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/openevolve_kb_%j.err
+#SBATCH --output=logs/openevolve_kb_%j.out
+#SBATCH --error=logs/openevolve_kb_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:2,scratch:200g
@@ -21,11 +20,14 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
-OPENEVOLVE_ROOT="/hx2-weka/home/nr1713/openevolve"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ ! -d "${REPO}/benchmarking" ] && [ "${REPO}" != "/" ]; do
+    REPO="$(dirname "${REPO}")"
+done
+OPENEVOLVE_ROOT="$HOME/openevolve"
 # Dataset loader for task preparation (evaluation uses the vendored
 # robust_kernelbench package).
-ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
+ROBUST_KB="${ROBUST_KB:-$HOME/robust_kernelbench}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
     JOB_ID="${JOB_ID}_a${SLURM_ARRAY_TASK_ID}"
@@ -58,7 +60,7 @@ EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/openevolve_kernelbench_${JOB_ID}}"
 cd "${REPO}"
 mkdir -p logs experiments
 
-source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
+source "${CONDA_SH:-$HOME/miniconda3/etc/profile.d/conda.sh}"
 conda activate env_vllm30
 
 export CUDA_VISIBLE_DEVICES=0

@@ -12,10 +12,10 @@ descriptions, and writes ``tasks_full.json`` plus the official named task lists.
 
 Usage:
     python benchmarking/tasks/algotune/prepare_full_manifest.py \
-        --algotune-root /hx2-weka/home/nr1713/AlgoTune
+        --algotune-root ~/AlgoTune
 
     python benchmarking/tasks/algotune/prepare_dataset.py \
-        --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+        --algotune-root ~/AlgoTune \
         --manifest benchmarking/tasks/algotune/tasks_full.json \
         --output benchmarking/tasks/algotune/dataset_full
 """
@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_ALGOTUNE_ROOT = "/hx2-weka/home/nr1713/AlgoTune"
+DEFAULT_ALGOTUNE_ROOT = str(Path.home() / "AlgoTune")
 DEFAULT_HF_REPO = "oripress/AlgoTune"
 FILENAME_RE = re.compile(
     r"^data/(?P<task>[^/]+)/(?P=task)_T(?P<target>\d+)ms_n(?P<n>\d+)_size(?P<size>\d+)_train\.jsonl$"

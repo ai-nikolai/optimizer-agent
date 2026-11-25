@@ -23,7 +23,7 @@ import traceback
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_ALGOTUNE_ROOT = "/hx2-weka/home/nr1713/AlgoTune"
+DEFAULT_ALGOTUNE_ROOT = str(Path.home() / "AlgoTune")
 
 
 class TaskTimeout(RuntimeError):

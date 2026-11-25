@@ -62,16 +62,16 @@ Prepare the curated set:
 ```bash
 conda activate env_kb2
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+  --algotune-root $ALGOTUNE_ROOT
 ```
 
 Prepare the full 154-task set:
 
 ```bash
 python benchmarking/tasks/algotune/prepare_full_manifest.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+  --algotune-root $ALGOTUNE_ROOT
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --algotune-root $ALGOTUNE_ROOT \
   --manifest benchmarking/tasks/algotune/tasks_full.json \
   --output benchmarking/tasks/algotune/dataset_full
 ```
@@ -80,7 +80,7 @@ Upload the lightweight manifest to your own HF account if desired:
 
 ```bash
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --algotune-root $ALGOTUNE_ROOT \
   --manifest benchmarking/tasks/algotune/tasks_full.json \
   --output benchmarking/tasks/algotune/dataset_full \
   --push-to-hf your-name/AlgoTuneTasks
@@ -123,4 +123,4 @@ PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/agents/openevolve/kernelbench
 Environment for the jobs:
 - `env_kb2` for optimizer-agent + AlgoTune evaluator
 - `env_vllm30` only for the vLLM server
-- `ALGOTUNE_ROOT` default: `/hx2-weka/home/nr1713/AlgoTune`
+- `ALGOTUNE_ROOT` default: `$ALGOTUNE_ROOT`

@@ -29,7 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
-DEFAULT_ALGOTUNE_ROOT = "/hx2-weka/home/nr1713/AlgoTune"
+DEFAULT_ALGOTUNE_ROOT = str(Path.home() / "AlgoTune")
 MARKER = "=== Evaluation Result ==="
 
 

@@ -64,8 +64,8 @@ conda activate env_kb2      # agent + evaluators (torch, numpy, scipy, numba)
 pip install -e .
 # env_vllm30 is only for the vLLM server (OpenAI-compatible API)
 
-# 5. environment variables (the launchers default to this cluster's paths; on a
-#    new machine export these or edit the launcher defaults)
+# 5. environment variables (launchers default to $HOME/<name>; export these if
+#    your checkouts live elsewhere)
 export ALGOTUNE_ROOT=$PWD/../AlgoTune
 export ROBUST_KERNELBENCH_ROOT=$PWD/../robust_kernelbench
 export OPENEVOLVE_ROOT=$PWD/../openevolve
@@ -73,7 +73,14 @@ export OPENEVOLVE_ROOT=$PWD/../openevolve
 # 6. sanity
 python -c "import robust_kernelbench, optimizer_agent; print(robust_kernelbench.__file__)"
 python -m pytest tests -q            # 65 tests
+
+# 7. submit from the repository root: the launchers write logs via relative
+#    paths and derive REPO from their own location
+sbatch benchmarking/agents/optimizer-agent/algotune/run_full_slurm.sh
 ```
+
+If conda lives somewhere unusual, export `CONDA_SH=/path/to/conda.sh`; the
+launchers fall back to `$HOME/miniconda3/etc/profile.d/conda.sh`.
 
 Datasets are **already in the repo** — nothing to download for AlgoTune:
 

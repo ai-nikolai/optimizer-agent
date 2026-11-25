@@ -24,7 +24,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[3]
 ROBUST_KB_ROOT = Path(
-    "/hx2-weka/home/nr1713/robust_kernelbench"
+    str(Path.home() / "robust_kernelbench")
 )
 if str(ROBUST_KB_ROOT) not in sys.path:
     sys.path.insert(0, str(ROBUST_KB_ROOT))

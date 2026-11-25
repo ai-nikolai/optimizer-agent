@@ -24,9 +24,9 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[3]
-DEFAULT_SOURCE = Path("/hx2-weka/home/nr1713/openevolve/examples/algotune")
+DEFAULT_SOURCE = Path(str(Path.home() / "openevolve" / "examples" / "algotune"))
 DEFAULT_MANIFEST = REPO_ROOT / "benchmarking" / "tasks" / "algotune" / "tasks.json"
-DEFAULT_ALGOTUNE_ROOT = "/hx2-weka/home/nr1713/AlgoTune"
+DEFAULT_ALGOTUNE_ROOT = str(Path.home() / "AlgoTune")
 
 
 def parse_args():

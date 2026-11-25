@@ -19,7 +19,7 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[3]
 TASKS_DIR = REPO_ROOT / "benchmarking" / "tasks" / "algotune"
 DEFAULT_ALGOTUNE_ROOT = os.environ.get(
-    "ALGOTUNE_ROOT", "/hx2-weka/home/nr1713/AlgoTune"
+    "ALGOTUNE_ROOT", str(Path.home() / "AlgoTune")
 )
 
 

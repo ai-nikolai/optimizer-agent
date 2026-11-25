@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=optagent_kb
-#SBATCH --chdir=/hx2-weka/home/nr1713/optimizer-agent-benchmarking
-#SBATCH --output=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_kb_%j.out
-#SBATCH --error=/hx2-weka/home/nr1713/optimizer-agent-benchmarking/logs/optagent_kb_%j.err
+#SBATCH --output=logs/optagent_kb_%j.out
+#SBATCH --error=logs/optagent_kb_%j.err
 #SBATCH --time=04:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:2,scratch:100g
@@ -22,7 +21,10 @@
 
 set -uo pipefail
 
-REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ ! -d "${REPO}/benchmarking" ] && [ "${REPO}" != "/" ]; do
+    REPO="$(dirname "${REPO}")"
+done
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 SCRATCH="${TMPDIR:-/tmp}/optagent_kb_${JOB_ID}"
 mkdir -p "${SCRATCH}/tmp" "${SCRATCH}/torch_extensions" "${SCRATCH}/triton" "${SCRATCH}/torchinductor" "${SCRATCH}/xdg" "${SCRATCH}/hf_datasets" "${SCRATCH}/kb_builds"
@@ -68,7 +70,7 @@ EVALUATE="${EVALUATE:-${DEFAULT_EVALUATE}}"
 cd "${REPO}"
 mkdir -p logs experiments
 
-source /hx2-weka/home/nr1713/miniconda3/etc/profile.d/conda.sh
+source "${CONDA_SH:-$HOME/miniconda3/etc/profile.d/conda.sh}"
 conda activate env_vllm30
 
 export CUDA_VISIBLE_DEVICES=0
@@ -118,7 +120,7 @@ fi
 
 conda deactivate
 conda activate env_kb2
-ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
+ROBUST_KB="${ROBUST_KB:-$HOME/robust_kernelbench}"
 export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
 export PYTHONPATH="${REPO}:${ROBUST_KB}:${PYTHONPATH:-}"
 if [ -d "${ROBUST_KB}/.git" ]; then

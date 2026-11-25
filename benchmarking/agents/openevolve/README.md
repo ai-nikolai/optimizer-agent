@@ -27,9 +27,9 @@ python benchmarking/agents/openevolve/algotune/prepare_tasks.py
 Run locally against an already-running vLLM server:
 
 ```bash
-ALGOTUNE_PATH=/hx2-weka/home/nr1713/AlgoTune \
+ALGOTUNE_PATH=$ALGOTUNE_ROOT \
 OPENAI_API_KEY=dummy \
-PYTHONPATH=/hx2-weka/home/nr1713/openevolve:/hx2-weka/home/nr1713/AlgoTune:$PWD \
+PYTHONPATH=$OPENEVOLVE_ROOT:$ALGOTUNE_ROOT:$PWD \
 python benchmarking/agents/openevolve/algotune/run_tasks.py \
   --iterations 100 \
   --output experiments/openevolve_algotune/results.csv
@@ -65,9 +65,9 @@ python benchmarking/agents/openevolve/kernelbench/prepare_tasks.py --level 1 --l
 Run locally:
 
 ```bash
-ROBUST_KERNELBENCH_ROOT=/hx2-weka/home/nr1713/robust_kernelbench \
+ROBUST_KERNELBENCH_ROOT=$ROBUST_KERNELBENCH_ROOT \
 OPENAI_API_KEY=dummy \
-PYTHONPATH=/hx2-weka/home/nr1713/openevolve:/hx2-weka/home/nr1713/robust_kernelbench:$PWD \
+PYTHONPATH=$OPENEVOLVE_ROOT:$ROBUST_KERNELBENCH_ROOT:$PWD \
 CUDA_VISIBLE_DEVICES=1 \
 python benchmarking/agents/openevolve/kernelbench/run_tasks.py \
   --tasks-dir benchmarking/agents/openevolve/kernelbench/tasks/level_1 \
