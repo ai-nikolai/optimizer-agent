@@ -5,10 +5,10 @@ the hardened evaluator (`evaluate.py`), the legacy evaluator
 (`evaluate_legacy.py`). `evaluate.py` calls
 `robust_kernelbench.evaluate_single.eval_kernel_against_ref` directly, so
 `ROBUST_KERNELBENCH_ROOT` must point at that checkout (the launchers export it).
-See `../../ROBUST_KERNELBENCH_FEEDBACK.md` for the issues we reported upstream. Runners live in `../../agents/` — `recursive/` for the
-AKD kernel_eng2 baseline and `optimizer-agent/kernelbench/` for
-optimizer-agent. The sections below describe the evaluator contract and the
-commands each agent uses.
+See `../../ROBUST_KERNELBENCH_FEEDBACK.md` for the upstream issue report.
+Runners live in `../../agents/` — `recursive/` for the repair-chain baseline and
+`optimizer-agent/kernelbench/` for optimizer-agent. The sections below describe
+the evaluator contract and the commands each agent uses.
 
 This directory maps robust_kernelbench's multi-round KernelBench loop onto the
 optimizer-agent:
@@ -27,44 +27,21 @@ optimizer-agent:
 
 ## Files
 
-- `evaluate.py` — task-specific evaluator. Calls
-  `robust_kernelbench.evaluate_single.eval_kernel_against_ref` and maps its
-  result to the generic evaluator contract.
-- `../../agents/prompts/kernelbench.json` — shared KernelBench instructions, `ModelNew`/`load_inline`
-  output format, and the repair-feedback slot.
-- `run_level.py` — loads a KernelBench level, writes each problem to a file, and
-  runs one `Agent` per problem with `bestN_last` and `num_samples=1`. With
-  `--dataset-dir` it instead iterates a flat `<id>_baseline.py` /
-  `<id>_reference.py` dataset (the AKD replay mode).
-- `../feedback/kernel_rules_llm.json` — kernel profile + `rules_llm` feedback.
-- `akd/` — self-contained replay of the `automatic_knowledge_discovery`
-  `kernel_eng2` experiment: 100-problem dataset, AKD prompt/feedback configs,
-  legacy evaluator, and a 2-GPU Slurm launcher. See `akd/README.md`.
+| File | Role |
+|---|---|
+| `dataset/` | 100 problems, `<id>_baseline.py` + `<id>_reference.py` |
+| `evaluate.py` | hardened evaluator; imports `robust_kernelbench.evaluate_single` |
+| `evaluate_legacy.py` | the pre-hardening policy, for historical reproduction only |
+| `../../agents/prompts/kernelbench.json` | shared instructions (ModelNew, load_inline, complete file) |
+| `../../agents/feedback_config.json` | shared feedback policy (`rules_llm`, speedup metric) |
+| `../../agents/recursive/` | repair-chain launcher (this task set) |
+| `../../agents/optimizer-agent/kernelbench/` | optimizer-agent driver + launcher |
+| `../../agents/openevolve/kernelbench/` | OpenEvolve competitor (same evaluator) |
 
-## AKD `kernel_eng2` replay
-
-The copy in `akd/` makes the running AKD experiments reproducible from this
-branch:
-
-```bash
-# robust replication (bestN_last)
-EXPERIMENT_NAME=experiment_v5_0_robust_kb_optagent_replay \
-  sbatch benchmarking/agents/recursive/run_slurm.sh
-
-# new settings (map_elites/dynamic/3 + strategy)
-EXPERIMENT_NAME=experiment_v5_0_newsettings_optagent_replay \
-SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 USE_STRATEGY=1 \
-  sbatch benchmarking/agents/recursive/run_slurm.sh
-```
-
-The AKD launcher uses the hardened `benchmarking/tasks/kernelbench/evaluate.py` by
-default. Pass `EVALUATE=benchmarking/tasks/kernelbench/evaluate_legacy.py` to
-reproduce the legacy in-flight policy.
-
-All launchers request scratch (`--gres=...,scratch:...`) and export
-`TMPDIR`, `TORCH_EXTENSIONS_DIR`, `TRITON_CACHE_DIR`,
-`TORCHINDUCTOR_CACHE_DIR`, `XDG_CACHE_HOME` and `HF_DATASETS_CACHE` into it.
-Only experiment results and logs stay in home.
+Every KernelBench agent is scored by the same CLI, so scores are comparable
+across agents. The repair-chain runner is documented in
+`../../agents/recursive/README.md`; it needs no external checkout beyond
+`robust_kernelbench`.
 
 ## Exact command (server already running)
 

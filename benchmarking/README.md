@@ -1,5 +1,9 @@
 # Benchmarking
 
+> New machine? Read [`../AGENTS.md`](../AGENTS.md) first: it covers the
+> two required checkouts (optimizer-agent + robust_kernelbench), the bootstrap,
+> run commands and what is archival.
+
 Two task families, three agents. Tasks own the dataset and the evaluator;
 agents own the runner, prompts and Slurm launcher.
 
@@ -35,9 +39,10 @@ sbatch benchmarking/agents/optimizer-agent/kernelbench/run_slurm.sh
 See `tasks/kernelbench/README.md` for the dataset and evaluator, and
 `agents/optimizer-agent/README.md` for levels, rounds and sharding.
 
-To replay the 100-problem `automatic_knowledge_discovery` `kernel_eng2`
-experiments, use `benchmarking/agents/recursive/run_slurm.sh`; the dataset,
-prompts and feedback config live there. See `agents/recursive/README.md`.
+The 100-problem repair-chain baseline (the historical AKD `kernel_eng2` policy)
+is `benchmarking/agents/recursive/run_slurm.sh`. It needs only this repo plus
+`robust_kernelbench`; prompts and feedback are shared in `agents/`. See
+`agents/recursive/README.md`.
 
 ## AlgoTune
 

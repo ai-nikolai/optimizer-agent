@@ -26,28 +26,53 @@ the OpenEvolve competitor package).
 
 ## 2. New-server bootstrap
 
+**Two repositories are required. Everything else is third-party.**
+
+| Required | Why |
+|---|---|
+| `ai-nikolai/optimizer-agent` (this repo, `feat/benchmarking`) | the agent and the whole benchmark harness |
+| `ai-nikolai/robust_kernelbench` | the KernelBench **evaluator** — imported, not vendored. This must be pulled separately. |
+
+| Third-party, only if you run that benchmark | Why |
+|---|---|
+| `oripress/AlgoTune` | task implementations behind the AlgoTune evaluator |
+| `ai-nikolai/openevolve` | the OpenEvolve competitor |
+
+**Not required: the historical AKD checkout (`automatic_knowledge_discovery`).**
+Nothing in this repository imports it. The old KernelBench results that were
+produced there are recorded in `COMPARISON.md` for provenance only; the `clean_`
+batch reproduces the same experiments from this repo.
+
 ```bash
-# 1. code
+# 1. our code
 git clone https://github.com/ai-nikolai/optimizer-agent.git
-cd optimizer-agent
-git checkout feat/benchmarking
+cd optimizer-agent && git checkout feat/benchmarking
 
-# 2. environments (this cluster uses /hx2-weka/home/nr1713/miniconda3)
+# 2. the evaluator we import (must be >= the commit that fixed structured
+#    correctness failures; see ROBUST_KERNELBENCH_FEEDBACK.md)
+git clone https://github.com/ai-nikolai/robust_kernelbench.git ../robust_kernelbench
+git -C ../robust_kernelbench log --oneline -1      # expect 1139ebc or newer
+pip install -e ../robust_kernelbench                # editable, so the checkout is the source of truth
+
+# 3. third-party, per benchmark
+git clone https://github.com/oripress/AlgoTune.git ../AlgoTune
+git clone https://github.com/ai-nikolai/openevolve.git ../openevolve
+
+# 4. environments
 source <conda>/etc/profile.d/conda.sh
-conda activate env_kb2        # agent + evaluators (torch, numpy, scipy, numba)
+conda activate env_kb2      # agent + evaluators (torch, numpy, scipy, numba)
 pip install -e .
-# env_vllm30 is the vLLM server env (vLLM >= 0.6, OpenAI-compatible API)
+# env_vllm30 is only for the vLLM server (OpenAI-compatible API)
 
-# 3. external checkouts
-git clone https://github.com/oripress/AlgoTune.git        $HOME/AlgoTune
-git clone https://github.com/ai-nikolai/robust_kernelbench.git $HOME/robust_kernelbench
-git clone https://github.com/ai-nikolai/openevolve.git    $HOME/openevolve   # competitor
-
-# 4. environment variables (the launchers set defaults for this cluster; on a
+# 5. environment variables (the launchers default to this cluster's paths; on a
 #    new machine export these or edit the launcher defaults)
-export ALGOTUNE_ROOT=$HOME/AlgoTune
-export ROBUST_KERNELBENCH_ROOT=$HOME/robust_kernelbench
-export OPENEVOLVE_ROOT=$HOME/openevolve
+export ALGOTUNE_ROOT=$PWD/../AlgoTune
+export ROBUST_KERNELBENCH_ROOT=$PWD/../robust_kernelbench
+export OPENEVOLVE_ROOT=$PWD/../openevolve
+
+# 6. sanity
+python -c "import robust_kernelbench, optimizer_agent; print(robust_kernelbench.__file__)"
+python -m pytest tests -q            # 65 tests
 ```
 
 Datasets are **already in the repo** — nothing to download for AlgoTune:
@@ -208,10 +233,11 @@ Everything is pending behind the account's own `settings_*` backlog; check
 
 Historical (pre-alignment) artifacts are still in `experiments/`:
 `algotune_full_1689334/1689335`, `openevolve_algotune_full_1689375` +
-`..._resume_1709405`, `openevolve_kernelbench_full_1670750`, and the recursive
-runs in `automatic_knowledge_discovery/kernel_eng2/experiment_v5_1_*`. Their
-numbers are in `COMPARISON.md`; they predate the shared evaluators, so use the
-`clean_` batch for any publication.
+`..._resume_1709405`, `openevolve_kernelbench_full_1670750`. Their numbers are in
+`COMPARISON.md`; they predate the shared evaluators, so use the `clean_` batch
+for any publication. (The even older KernelBench recursive runs lived in the AKD
+checkout; they are **archival only** — nothing needs them and their conclusions
+are restated in `ANALYSIS.md` / `RECURSIVE_ADVANCED_ANALYSIS.md`.)
 
 ## 7. Known issues (read before debugging a bad score)
 
@@ -306,9 +332,51 @@ PY
 2. `benchmarking/COMPARISON.md` — settings, alignment, clean batch.
 3. `benchmarking/ANALYSIS.md` — what went wrong, with numbers.
 4. `benchmarking/IMPROVEMENT_PLAN.md` — the proposals and their evidence.
-5. `benchmarking/ROBUST_KERNELBENCH_FEEDBACK.md` — evaluator bug report.
+5. `benchmarking/RECURSIVE_ADVANCED_ANALYSIS.md` — per-failure-class deep dive.
+6. `benchmarking/ROBUST_KERNELBENCH_FEEDBACK.md` — evaluator bug report (fixed
+   upstream in `1139ebc`; kept for the contract).
 
-## 11. Do not
+## 11. Pushing and the dependency contract
+
+What a new machine needs is exactly:
+
+```text
+optimizer-agent (feat/benchmarking)   our code
+robust_kernelbench (>= 1139ebc)        imported evaluator
+```
+
+Everything else is upstream (AlgoTune tasks, OpenEvolve) or archival (the AKD
+checkout). Before publishing, verify that rule still holds:
+
+```bash
+# no code may reference the AKD checkout
+git grep -n "automatic_knowledge_discovery" -- '*.py' '*.sh'   # expect no hits
+
+# only these external paths may be required
+git grep -n "robust_kernelbench\|ALGOTUNE_ROOT\|OPENEVOLVE_ROOT" -- '*.py' '*.sh' | head
+```
+
+Push state (check before publishing; counts drift):
+
+```bash
+git -C <repo> log --oneline @{u}..HEAD     # commits not yet pushed
+git -C <repo> status --porcelain           # must be empty
+```
+
+Branches that matter:
+
+| Repo | Branch | Role |
+|---|---|---|
+| optimizer-agent | `feat/benchmarking` | required: agent + harness + docs |
+| robust_kernelbench | `v2.2-datasets` | required: evaluator |
+| optimizer-agent | `feat/analysis` | optional: dashboard |
+| automatic_knowledge_discovery | `main` | **not required**; archival only |
+
+`experiments/`, `logs/`, generated `tasks_*/` and `openevolve_output/` are
+git-ignored and must not be pushed. No credentials live in the repo (`HF_TOKEN`
+and API keys come from the environment).
+
+## 12. Do not
 
 - Do not commit `experiments/`, `logs/`, `tasks_*/`, `openevolve_output/` — they
   are git-ignored; results stay on disk only.

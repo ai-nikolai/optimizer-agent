@@ -10,8 +10,9 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=400G
 
-# Replay of the kernel_eng2 / automatic_knowledge_discovery experiment inside
-# the optimizer-agent benchmarking branch.
+# Recursive (repair-chain) baseline: optimizer-agent with bestN_last over the
+# 100-problem KernelBench set. This reproduces the policy of the historical
+# kernel_eng2 "recursive" runs; no external checkout is needed.
 #
 #   GPU 0: vLLM (TP=1)
 #   GPU 1: optimizer-agent + CUDA evaluator (one task at a time)

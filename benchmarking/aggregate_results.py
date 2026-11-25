@@ -26,10 +26,8 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-# External result directories. The benchmark code lives in this repository;
-# these point at artifacts from runs executed elsewhere and are optional.
-AKD = Path(os.environ.get("AKD_RESULTS", "/hx2-weka/home/nr1713/automatic_knowledge_discovery/kernel_eng2"))
-KERNELBENCH = Path(os.environ.get("V11_RESULTS", "/hx2-weka/home/nr1713/robust_kernelbench"))
+# Optional legacy results (v11 harness). Not needed for the current comparison.
+V11_RESULTS = os.environ.get("V11_RESULTS")
 
 
 def _speedup(value):
@@ -55,32 +53,6 @@ def summarize(name, scores, tokens, calls, tasks_total, valid, done=None):
         "tokens_total": tokens["total_tokens"],
         "calls": calls,
     }
-
-
-def akd_summaries(name, run_dir, tasks_total=100):
-    """recursive-agent KernelBench runs (AKD kernel_eng2 experiment dirs)."""
-    if not run_dir.exists():
-        return None
-    scores, tokens, calls = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, 0
-    valid = []
-    for path in sorted(glob.glob(str(run_dir / "*/summary.json"))):
-        summary = json.loads(Path(path).read_text())
-        usage = summary.get("token_usage") or {}
-        for key in tokens:
-            tokens[key] += int(usage.get(key) or 0)
-        calls += int(usage.get("calls") or 0)
-        scores_block = (summary.get("best") or {}).get("scores") or {}
-        if not scores_block.get("valid"):
-            continue
-        custom = scores_block.get("runtime_custom_ms")
-        original = scores_block.get("runtime_original_ms")
-        if not custom or not original:
-            continue
-        speedup = _speedup(original / custom)
-        if speedup:
-            scores.append(speedup)
-            valid.append(Path(path).parent.name)
-    return summarize(name, scores, tokens, calls, tasks_total, valid, done=len(glob.glob(str(run_dir / "*/summary.json"))))
 
 
 def algotune_csv(name, pattern, tasks_total=154):
@@ -281,9 +253,8 @@ def main():
             cumulative_usage=False,
         )),
     ]
-    v11_root = os.environ.get("V11_RESULTS")
-    if v11_root:
-        rows.append(tagged(kernelbench, v11_summary("robust_kernelbench v11 (legacy, external)", Path(v11_root))))
+    if V11_RESULTS:
+        rows.append(tagged(kernelbench, v11_summary("robust_kernelbench v11 (legacy, external)", Path(V11_RESULTS))))
     rows = [row for row in rows if row is not None]
 
     print(render(rows))
