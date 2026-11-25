@@ -53,6 +53,29 @@ PROBLEM_LIMIT=1 ITERATIONS=1 sbatch benchmarking/agents/openevolve/kernelbench/r
 PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/agents/openevolve/kernelbench/run_slurm.sh
 ```
 
+## Clean rerun batch (Nov 2026)
+
+All six rows of the matrix are being re-run with the aligned evaluators,
+shared prompts/feedback and debug enabled. Jobs (tag `clean_`):
+
+| Run | Job(s) | Shards | Budget |
+|---|---|---|---|
+| AlgoTune sequential | `1772601` | 3 × 1 GPU | 10 rounds, 12 h |
+| AlgoTune advanced | `1772602` | 3 × 1 GPU | 4 rounds, `map_elites` x3, 12 h |
+| OpenEvolve AlgoTune | `1772603` | 8 × 1 GPU | 20 iterations, checkpoint/iter, 18 h |
+| recursive KernelBench | `1772604`, `1772605` | P1–50, P51–100 | 5 rounds, 2 GPUs each, 24 h |
+| recursive KernelBench advanced | `1772606`, `1772607` | P1–50, P51–100 | 5 rounds, `map_elites` x3, 24 h |
+| OpenEvolve KernelBench | `1772608` | 4 × 2 GPUs | 50 iterations, 24 h |
+
+Aggregate with:
+
+```bash
+python benchmarking/aggregate_results.py --tag clean
+```
+
+Results land in `experiments/clean_*`. The table above (and the historical rows)
+predates this batch.
+
 ## Evaluation alignment
 
 All agents are scored by the same code per task family, so a score difference
