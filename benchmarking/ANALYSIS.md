@@ -179,9 +179,9 @@ The unpack order was swapped in the `not matched` branch (the runtime-error
 branch above it is correct). The exception then escapes into the outer handler,
 which reports the formatted `TypeError` as the candidate's error. Consequence:
 125/126 candidates failed with a message that says nothing about *what* was
-wrong, so the debug stage repaired blind. The one-line fix (swap the tuple) is reported in
-`ROBUST_KERNELBENCH_FEEDBACK.md`; correctness verdicts are unaffected, only the
-diagnostic is lost until the maintainer lands it.
+wrong, so the debug stage repaired blind. Reported in `ROBUST_KERNELBENCH_FEEDBACK.md` and fixed upstream in
+`robust_kernelbench@1139ebc`, which also adds `error_kind`, the numeric diffs
+and per-trial results. The runs analysed here predate that fix.
 
 **2. `ModelNew was not defined` — 114 times in the advanced profile.**
 The candidates contain a full implementation but name it `Model` (the

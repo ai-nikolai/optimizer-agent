@@ -4,7 +4,7 @@ Everything needed to continue this work on a new machine: what exists, how to
 run it, what is scheduled, what is broken, and what to do next. Read this
 before touching anything.
 
-Last updated: 2026-11-26.
+Last updated: 2026-11-25.
 
 ---
 
@@ -215,17 +215,15 @@ numbers are in `COMPARISON.md`; they predate the shared evaluators, so use the
 
 ## 7. Known issues (read before debugging a bad score)
 
-1. **`robust_kernelbench` evaluator bug (reported).** In
-   `robust_kernelbench/evaluate_single.py` the correctness-mismatch branch
-   unpacks `register_and_format_exception` backwards, so every output mismatch
-   raises `TypeError: 'str' object does not support item assignment` instead of
-   returning a mismatch message. It also overwrites the real comparison message
-   with `"Output mismatch"`. Full report:
-   `benchmarking/ROBUST_KERNELBENCH_FEEDBACK.md`. Until fixed, KernelBench
-   rejection messages are useless to the repair loop (correctness verdicts are
-   still right). Note the `robust_kernelbench` checkout currently has **7
-   uncommitted modified files** that were not made by this work — review them
-   before pulling.
+1. **`robust_kernelbench` evaluator bug — fixed upstream (`1139ebc`).** The
+   reversed unpack that turned every mismatch into
+   `TypeError: 'str' object does not support item assignment` is gone, and the
+   fix also adds `metadata.error/error_kind`, `max_abs_diff`, `max_rel_diff`,
+   `mismatch_index`, `trial`, `seed`, `correctness_status` and
+   `metadata.trial_results`, plus a `timeout_s` and regression tests. The report
+   that drove it is `benchmarking/ROBUST_KERNELBENCH_FEEDBACK.md`; keep the
+   checkout at or above `1139ebc`. Historical KernelBench runs predate the fix,
+   so their rejection messages are the old `TypeError`.
 2. **OpenEvolve AlgoTune timeouts.** Ten tasks (`lp_box`, `qp`, `lasso`,
    `lyapunov_stability`, `channel_capacity`, `chebyshev_center`, `lp_centering`,
    `minimum_volume_ellipsoid`, `ode_lorenz96_nonchaotic`, `ode_stiff_robertson`)
