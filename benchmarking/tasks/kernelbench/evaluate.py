@@ -156,6 +156,16 @@ def main():
                     "error": _error_from(data, metadata),
                 }
             )
+    except ModuleNotFoundError as exc:  # explicit remediation for the one required checkout
+        if "robust_kernelbench" in str(exc):
+            result["error"] = (
+                "robust_kernelbench is not importable. Clone "
+                "https://github.com/ai-nikolai/robust_kernelbench, "
+                "export ROBUST_KERNELBENCH_ROOT, and `pip install -e` it "
+                "(see AGENTS.md section 2)."
+            )
+        else:
+            result["error"] = f"{type(exc).__name__}: {exc}"
     except Exception as exc:  # noqa: BLE001 - always emit a parseable result
         result["error"] = f"{type(exc).__name__}: {exc}"
 

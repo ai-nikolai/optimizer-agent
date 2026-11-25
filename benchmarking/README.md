@@ -2,7 +2,8 @@
 
 > New machine? Read [`../AGENTS.md`](../AGENTS.md) first: it covers the
 > two required checkouts (optimizer-agent + robust_kernelbench), the bootstrap,
-> run commands and what is archival.
+> run commands and what is archival. `robust_kernelbench` must be pulled
+> manually (it is imported, not vendored); verify with `python scripts/check_deps.py`.
 
 Two task families, three agents. Tasks own the dataset and the evaluator;
 agents own the runner, prompts and Slurm launcher.

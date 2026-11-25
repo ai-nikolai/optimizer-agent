@@ -27,6 +27,8 @@ the OpenEvolve competitor package).
 ## 2. New-server bootstrap
 
 **Two repositories are required. Everything else is third-party.**
+`robust_kernelbench` is not vendored and cannot be installed from this repo: a
+new agent must pull it manually (step 2 below) before any KernelBench run works.
 
 | Required | Why |
 |---|---|
@@ -50,6 +52,7 @@ cd optimizer-agent && git checkout feat/benchmarking
 
 # 2. the evaluator we import (must be >= the commit that fixed structured
 #    correctness failures; see ROBUST_KERNELBENCH_FEEDBACK.md)
+# MANUAL STEP: pull the evaluator. It is imported, not vendored.
 git clone https://github.com/ai-nikolai/robust_kernelbench.git ../robust_kernelbench
 git -C ../robust_kernelbench log --oneline -1      # expect 1139ebc or newer
 pip install -e ../robust_kernelbench                # editable, so the checkout is the source of truth
@@ -70,8 +73,8 @@ export ALGOTUNE_ROOT=$PWD/../AlgoTune
 export ROBUST_KERNELBENCH_ROOT=$PWD/../robust_kernelbench
 export OPENEVOLVE_ROOT=$PWD/../openevolve
 
-# 6. sanity
-python -c "import robust_kernelbench, optimizer_agent; print(robust_kernelbench.__file__)"
+# 6. sanity — this prints the remediation for anything missing
+python scripts/check_deps.py
 python -m pytest tests -q            # 65 tests
 
 # 7. submit from the repository root: the launchers write logs via relative
@@ -307,6 +310,9 @@ squeue -u $USER -o "%.10i %.28j %.10T %.11M %.20S %R"
 
 # per-run progress
 for d in experiments/clean_*; do echo -n "$d: "; wc -l < "$d/results.csv" 2>/dev/null || true; done
+
+# dependencies (run this first on a new machine)
+python scripts/check_deps.py
 
 # table
 python benchmarking/aggregate_results.py --tag clean
