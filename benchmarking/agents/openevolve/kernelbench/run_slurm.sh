@@ -24,7 +24,7 @@ set -uo pipefail
 REPO="/hx2-weka/home/nr1713/optimizer-agent-benchmarking"
 OPENEVOLVE_ROOT="/hx2-weka/home/nr1713/openevolve"
 # Dataset loader for task preparation (evaluation uses the vendored
-# benchmarking/tasks/kernelbench/robust_eval package).
+# robust_kernelbench package).
 ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
 JOB_ID="${SLURM_JOB_ID:-local_$(date +%s)}"
 if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then

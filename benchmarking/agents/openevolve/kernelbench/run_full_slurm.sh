@@ -35,7 +35,7 @@ export PROBLEM_START="${START}"
 export PROBLEM_LIMIT="${TASKS_PER_SHARD}"
 export ITERATIONS="${ITERATIONS:-50}"
 export LEVEL="${LEVEL:-1}"
-export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/openevolve_kernelbench_full_${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}_shard${SHARD_INDEX}}"
+export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${RUN_PREFIX:-}openevolve_kernelbench_${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}_shard${SHARD_INDEX}}"
 
 echo "=== OpenEvolve KernelBench full shard ${SHARD_INDEX}/${NUM_SHARDS}: start=${START} limit=${TASKS_PER_SHARD} total=${TOTAL_TASKS}"
 echo "=== experiment=${EXPERIMENT_DIR}"

@@ -39,7 +39,7 @@ export DATASET_ROOT="${DATASET_ROOT:-${REPO}/benchmarking/tasks/algotune/dataset
 export START
 export LIMIT="${TASKS_PER_SHARD}"
 export ROUNDS="${ROUNDS:-5}"
-export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/algotune_full_${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}_shard${SHARD_INDEX}}"
+export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${RUN_PREFIX:-}algotune_${EXPERIMENT_KIND:-full}_${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}_shard${SHARD_INDEX}}"
 
 echo "=== AlgoTune full shard ${SHARD_INDEX}/${NUM_SHARDS}: start=${START} limit=${LIMIT} total=${TOTAL_TASKS}"
 echo "=== manifest=${MANIFEST}"

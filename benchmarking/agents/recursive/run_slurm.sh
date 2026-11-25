@@ -16,10 +16,10 @@
 #   GPU 0: vLLM (TP=1)
 #   GPU 1: optimizer-agent + CUDA evaluator (one task at a time)
 #
-# The default evaluator is the legacy in-flight one (evaluate_legacy.py) so the
-# replay matches the running AKD experiments.  For a hardened run, use:
-#   EVALUATE=benchmarking/tasks/kernelbench/evaluate.py \
-#     sbatch benchmarking/agents/recursive/run_slurm.sh
+# The default evaluator is the shared hardened one
+# (benchmarking/tasks/kernelbench/evaluate.py -> robust_kernelbench).
+# For historical reproduction only, pass
+#   EVALUATE=benchmarking/tasks/kernelbench/evaluate_legacy.py
 #
 # Examples:
 #   # robust replication (bestN_last)
@@ -76,7 +76,7 @@ DATASET_DIR="${DATASET_DIR:-${REPO}/benchmarking/tasks/kernelbench/dataset}"
 PROMPT_CONFIG="${PROMPT_CONFIG:-${REPO}/benchmarking/agents/prompts/kernelbench.json}"
 FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${REPO}/benchmarking/agents/feedback_config.json}"
 EVALUATE="${EVALUATE:-${REPO}/benchmarking/tasks/kernelbench/evaluate.py}"  # robust; legacy: tasks/kernelbench/evaluate_legacy.py
-EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${EXPERIMENT_NAME}}"
+EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${RUN_PREFIX:-}${EXPERIMENT_NAME}}"
 
 cd "${REPO}"
 mkdir -p logs experiments "${EXPERIMENT_DIR}"

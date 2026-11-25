@@ -100,6 +100,24 @@ def algotune_csv(name, pattern, tasks_total=154):
     return summarize(name, scores, tokens, calls, tasks_total, valid, done=done)
 
 
+def driver_csv(name, pattern, tasks_total):
+    """optimizer-agent per-task driver CSVs (AlgoTune/KernelBench run_level)."""
+    scores, tokens, calls = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, 0
+    valid, done = [], 0
+    for path in sorted(glob.glob(pattern)):
+        for row in csv.DictReader(open(path, newline="", encoding="utf-8")):
+            done += 1
+            tokens["prompt_tokens"] += int(float(row.get("prompt_tokens") or 0))
+            tokens["completion_tokens"] += int(float(row.get("completion_tokens") or 0))
+            calls += int(float(row.get("llm_calls") or 0))
+            speedup = _speedup(row.get("best_score") or row.get("best_speedup"))
+            if speedup:
+                scores.append(speedup)
+                valid.append(row.get("problem_id") or row.get("task"))
+    tokens["total_tokens"] = tokens["prompt_tokens"] + tokens["completion_tokens"]
+    return summarize(name, scores, tokens, calls, tasks_total, valid, done=done)
+
+
 def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale=1.0):
     """OpenEvolve driver CSVs, de-duplicated to one attempt per task.
 
@@ -209,10 +227,18 @@ def render(rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--markdown", action="store_true", help="Only print the table")
+    parser.add_argument(
+        "--tag",
+        default="clean",
+        help="Experiment directory prefix to aggregate (default: clean)",
+    )
     args = parser.parse_args()
 
     # Grouped by task set; within a group the methods go from simplest search
     # (repair-only, one sample per round) to hardest (OpenEvolve's own search).
+    tag = args.tag
+    exp = REPO / "experiments"
+
     def tagged(group, row):
         if row is not None:
             row["group"] = group
@@ -221,29 +247,43 @@ def main():
     algotune = "AlgoTune (154 tasks)"
     kernelbench = "KernelBench level 1 (100 tasks)"
     rows = [
-        tagged(algotune, algotune_csv("optimizer-agent sequential (10 rounds, bestN_last)", str(REPO / "experiments/algotune_full_1689335_shard*/results.csv"))),
-        tagged(algotune, algotune_csv("optimizer-agent advanced (4 rounds, map_elites x3)", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv"))),
+        tagged(algotune, driver_csv(
+            "optimizer-agent sequential (10 rounds, bestN_last)",
+            str(exp / f"{tag}algotune_seq_*/results.csv"),
+            154,
+        )),
+        tagged(algotune, driver_csv(
+            "optimizer-agent advanced (4 rounds, map_elites x3)",
+            str(exp / f"{tag}algotune_adv_*/results.csv"),
+            154,
+        )),
         tagged(algotune, openevolve_csv(
             "OpenEvolve (20 iterations, checkpoint/iter)",
-            [
-                str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
-                str(REPO / "experiments/openevolve_algotune_resume_1709405_shard*/results.csv"),
-            ],
+            str(exp / f"{tag}openevolve_algotune_*/results.csv"),
             "task",
             154,
         )),
-        tagged(kernelbench, akd_summaries("recursive (5 rounds, bestN_last)", AKD / "experiment_v5_1_robust_tokens_optagent")),
-        tagged(kernelbench, akd_summaries("recursive (5 rounds, map_elites x3)", AKD / "experiment_v5_1_newsettings_tokens_optagent")),
+        tagged(kernelbench, driver_csv(
+            "recursive (5 rounds, bestN_last)",
+            str(exp / f"{tag}recursive_kb_seq_*/results_shard*.csv"),
+            100,
+        )),
+        tagged(kernelbench, driver_csv(
+            "recursive (5 rounds, map_elites x3)",
+            str(exp / f"{tag}recursive_kb_adv_*/results_shard*.csv"),
+            100,
+        )),
         tagged(kernelbench, openevolve_csv(
             "OpenEvolve (50 iterations)",
-            str(REPO / "experiments/openevolve_kernelbench_full_1670750_shard*/results.csv"),
+            str(exp / f"{tag}openevolve_kernelbench_*/results.csv"),
             "problem_id",
             100,
             cumulative_usage=False,
         )),
-        tagged(kernelbench, v11_summary("robust_kernelbench v11 (3-GPU TP=2)", KERNELBENCH / "experiments/exp_local_L1_v11_0_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1")),
-        tagged(kernelbench, v11_summary("robust_kernelbench v11 fair (2-GPU TP=1)", KERNELBENCH / "experiments/exp_local_L1_v11_1_fair_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1")),
     ]
+    v11_root = os.environ.get("V11_RESULTS")
+    if v11_root:
+        rows.append(tagged(kernelbench, v11_summary("robust_kernelbench v11 (legacy, external)", Path(v11_root))))
     rows = [row for row in rows if row is not None]
 
     print(render(rows))
