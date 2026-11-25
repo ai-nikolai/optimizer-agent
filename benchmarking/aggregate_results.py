@@ -249,33 +249,33 @@ def main():
     rows = [
         tagged(algotune, driver_csv(
             "optimizer-agent sequential (10 rounds, bestN_last)",
-            str(exp / f"{tag}algotune_seq_*/results.csv"),
+            str(exp / f"{tag}_algotune_seq_*/results.csv"),
             154,
         )),
         tagged(algotune, driver_csv(
             "optimizer-agent advanced (4 rounds, map_elites x3)",
-            str(exp / f"{tag}algotune_adv_*/results.csv"),
+            str(exp / f"{tag}_algotune_adv_*/results.csv"),
             154,
         )),
         tagged(algotune, openevolve_csv(
             "OpenEvolve (20 iterations, checkpoint/iter)",
-            str(exp / f"{tag}openevolve_algotune_*/results.csv"),
+            str(exp / f"{tag}_openevolve_algotune_*/results.csv"),
             "task",
             154,
         )),
         tagged(kernelbench, driver_csv(
             "recursive (5 rounds, bestN_last)",
-            str(exp / f"{tag}recursive_kb_seq_*/results_shard*.csv"),
+            str(exp / f"{tag}_recursive_kb_seq_*/results_shard*.csv"),
             100,
         )),
         tagged(kernelbench, driver_csv(
             "recursive (5 rounds, map_elites x3)",
-            str(exp / f"{tag}recursive_kb_adv_*/results_shard*.csv"),
+            str(exp / f"{tag}_recursive_kb_adv_*/results_shard*.csv"),
             100,
         )),
         tagged(kernelbench, openevolve_csv(
             "OpenEvolve (50 iterations)",
-            str(exp / f"{tag}openevolve_kernelbench_*/results.csv"),
+            str(exp / f"{tag}_openevolve_kernelbench_*/results.csv"),
             "problem_id",
             100,
             cumulative_usage=False,
