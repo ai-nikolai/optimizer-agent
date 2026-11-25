@@ -20,13 +20,16 @@ import csv
 import glob
 import json
 import math
+import os
 import statistics
 from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-AKD = Path("/hx2-weka/home/nr1713/automatic_knowledge_discovery/kernel_eng2")
-KERNELBENCH = Path("/hx2-weka/home/nr1713/robust_kernelbench")
+# External result directories. The benchmark code lives in this repository;
+# these point at artifacts from runs executed elsewhere and are optional.
+AKD = Path(os.environ.get("AKD_RESULTS", "/hx2-weka/home/nr1713/automatic_knowledge_discovery/kernel_eng2"))
+KERNELBENCH = Path(os.environ.get("V11_RESULTS", "/hx2-weka/home/nr1713/robust_kernelbench"))
 
 
 def _speedup(value):
@@ -55,7 +58,9 @@ def summarize(name, scores, tokens, calls, tasks_total, valid, done=None):
 
 
 def akd_summaries(name, run_dir, tasks_total=100):
-    """optimizer-agent KernelBench runs (AKD kernel_eng2 experiment dirs)."""
+    """recursive-agent KernelBench runs (AKD kernel_eng2 experiment dirs)."""
+    if not run_dir.exists():
+        return None
     scores, tokens, calls = [], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, 0
     valid = []
     for path in sorted(glob.glob(str(run_dir / "*/summary.json"))):
@@ -141,6 +146,8 @@ def openevolve_csv(name, pattern, key, tasks_total, cumulative_usage=True, scale
 
 
 def v11_summary(name, run_dir, tasks_total=100):
+    if not run_dir.exists():
+        return None
     best, tokens_in, tokens_out = {}, 0, 0
     evaluated = set()
     for trial in sorted(run_dir.glob("trial_*")):
@@ -206,12 +213,17 @@ def main():
 
     # Grouped by task set; within a group the methods go from simplest search
     # (repair-only, one sample per round) to hardest (OpenEvolve's own search).
+    def tagged(group, row):
+        if row is not None:
+            row["group"] = group
+        return row
+
     algotune = "AlgoTune (154 tasks)"
     kernelbench = "KernelBench level 1 (100 tasks)"
     rows = [
-        algotune_csv("optimizer-agent sequential (10 rounds, bestN_last)", str(REPO / "experiments/algotune_full_1689335_shard*/results.csv")),
-        algotune_csv("optimizer-agent advanced (4 rounds, map_elites x3)", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv")),
-        openevolve_csv(
+        tagged(algotune, algotune_csv("optimizer-agent sequential (10 rounds, bestN_last)", str(REPO / "experiments/algotune_full_1689335_shard*/results.csv"))),
+        tagged(algotune, algotune_csv("optimizer-agent advanced (4 rounds, map_elites x3)", str(REPO / "experiments/algotune_full_1689334_shard*/results.csv"))),
+        tagged(algotune, openevolve_csv(
             "OpenEvolve (20 iterations, checkpoint/iter)",
             [
                 str(REPO / "experiments/openevolve_algotune_full_1689375_shard*/results.csv"),
@@ -219,23 +231,20 @@ def main():
             ],
             "task",
             154,
-        ),
-        akd_summaries("optimizer-agent sequential (5 rounds, bestN_last)", AKD / "experiment_v5_1_robust_tokens_optagent"),
-        akd_summaries("optimizer-agent advanced (5 rounds, map_elites x3)", AKD / "experiment_v5_1_newsettings_tokens_optagent"),
-        openevolve_csv(
+        )),
+        tagged(kernelbench, akd_summaries("recursive (5 rounds, bestN_last)", AKD / "experiment_v5_1_robust_tokens_optagent")),
+        tagged(kernelbench, akd_summaries("recursive (5 rounds, map_elites x3)", AKD / "experiment_v5_1_newsettings_tokens_optagent")),
+        tagged(kernelbench, openevolve_csv(
             "OpenEvolve (50 iterations)",
             str(REPO / "experiments/openevolve_kernelbench_full_1670750_shard*/results.csv"),
             "problem_id",
             100,
             cumulative_usage=False,
-        ),
-        v11_summary("robust_kernelbench v11 (3-GPU TP=2)", KERNELBENCH / "experiments/exp_local_L1_v11_0_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
-        v11_summary("robust_kernelbench v11 fair (2-GPU TP=1)", KERNELBENCH / "experiments/exp_local_L1_v11_1_fair_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1"),
+        )),
+        tagged(kernelbench, v11_summary("robust_kernelbench v11 (3-GPU TP=2)", KERNELBENCH / "experiments/exp_local_L1_v11_0_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1")),
+        tagged(kernelbench, v11_summary("robust_kernelbench v11 fair (2-GPU TP=1)", KERNELBENCH / "experiments/exp_local_L1_v11_1_fair_Qwen3_Coder_30B_A3B_Instruct_kernelbench_API1")),
     ]
-    for row in rows[:3]:
-        row["group"] = algotune
-    for row in rows[3:]:
-        row["group"] = kernelbench
+    rows = [row for row in rows if row is not None]
 
     print(render(rows))
     if not args.markdown:

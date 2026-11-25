@@ -8,48 +8,49 @@ competitors. All runs use the same local model
 
 | Setting | Search | Rounds / iterations | Samples per round | Feedback / strategy | Notes |
 |---|---|---|---|---|---|
-| **ours: sequential** | `bestN_last` | 5 | 1 | `rules_llm`, generic, no strategy/debug | robust-kernelbench-style repair chain |
-| **ours: advanced** | `map_elites`, dynamic, 3 cells | 5 | 1 | `rules_llm`, generic, strategy + debug | quality-diversity search |
+| **optimizer-agent** | `bestN_last` | 10 | 1 | `rules_llm`, generic, no strategy/debug | sequential repair chain |
+| **optimizer-agent: advanced** | `map_elites`, dynamic, 3 cells | 4 | 1 | `rules_llm`, generic, strategy + debug | quality-diversity search |
 | **OpenEvolve** | OpenEvolve MAP-Elites, 4 islands, population 1000 | 100 iterations | OpenEvolve native | OpenEvolve native prompts | OpenEvolve only, 5 correctness trials |
 
 Task set for the first comparison: the 8 curated AlgoTune tasks in
-`benchmarking/algotune/tasks.json`, with the same `n` per task. The full
+`benchmarking/tasks/algotune/tasks.json`, with the same `n` per task. The full
 154-task manifests are available; scale the same commands with
 `MANIFEST=... DATASET_ROOT=...`.
 
 Commands:
 
 ```bash
-# ours: sequential
-ROUNDS=5 sbatch benchmarking/algotune/run_slurm.sh
+# optimizer-agent, sequential
+ROUNDS=5 sbatch benchmarking/agents/optimizer-agent/algotune/run_slurm.sh
 
-# ours: advanced
+# optimizer-agent, advanced
 ROUNDS=5 SELECTION=map_elites MAP_ELITES_METHOD=dynamic NUM_MAP_ELITES=3 \
-  USE_STRATEGY=1 USE_DEBUG=1 sbatch benchmarking/algotune/run_slurm.sh
+  USE_STRATEGY=1 USE_DEBUG=1 sbatch benchmarking/agents/optimizer-agent/algotune/run_slurm.sh
 
 # OpenEvolve
-sbatch benchmarking/openevolve/algotune/run_slurm.sh
+sbatch benchmarking/agents/openevolve/algotune/run_slurm.sh
 ```
 
 ## KernelBench
 
 | Setting | Search | Rounds / iterations | Samples per round | Feedback / strategy | Notes |
 |---|---|---|---|---|---|
-| **ours: sequential** | `bestN_last` | 5 | 1 | kernel `rules_llm`, debug | `benchmarking/kernelbench/akd` / `run_level.py` |
-| **ours: advanced** | `map_elites`, dynamic, 3 cells | 5 | 1 | kernel `rules_llm`, strategy + debug | AKD newsettings profile |
+| **recursive** | `bestN_last` | 5 | 1 | kernel `rules_llm`, debug | `benchmarking/agents/recursive` |
+| **recursive: advanced** | `map_elites`, dynamic, 3 cells | 5 | 1 | kernel `rules_llm`, strategy + debug | `agents/recursive`, AKD newsettings profile |
 | **OpenEvolve** | OpenEvolve MAP-Elites, 4 islands, population 1000 | 50–100 iterations | OpenEvolve native | OpenEvolve native prompts | OpenEvolve only, robust evaluator |
 
-The KernelBench sequential/advanced runs are the AKD `kernel_eng2` jobs (100
-KernelBench-derived problems). The OpenEvolve KernelBench baseline uses the same
+The KernelBench recursive/advanced runs are the AKD `kernel_eng2` loop over the
+100-problem dataset in `benchmarking/tasks/kernelbench/dataset`, reproduced by
+`benchmarking/agents/recursive`. The OpenEvolve KernelBench baseline uses the same
 KernelBench level-1 problem family with the robust evaluator. Start with a
 subset and scale:
 
 ```bash
 # smoke
-PROBLEM_LIMIT=1 ITERATIONS=1 sbatch benchmarking/openevolve/kernelbench/run_slurm.sh
+PROBLEM_LIMIT=1 ITERATIONS=1 sbatch benchmarking/agents/openevolve/kernelbench/run_slurm.sh
 
 # baseline
-PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/openevolve/kernelbench/run_slurm.sh
+PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/agents/openevolve/kernelbench/run_slurm.sh
 ```
 
 ## Fairness notes
@@ -142,7 +143,7 @@ Notes:
   independently, not resumed (19 of 22 produced a different best program), so
   only one attempt each is counted above. All attempts together spent 42.2M
   tokens, against 24.6M for one attempt per task.
-- AKD KernelBench validity is low (57 and 62 of 100): the failures are 6 compile
+- Recursive KernelBench validity is low (57 and 62 of 100): the failures are 6 compile
   failures, 12 load failures and 25 correctness failures on the best candidate
   per task (sequential profile).
 - Outliers above 10x (e.g. `communicability` 116x, `count_riemann_zeta_zeros`

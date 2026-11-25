@@ -22,7 +22,7 @@ last_session.json
 !/logs/.gitkeep
 
 # generated OpenEvolve task dirs and outputs
-benchmarking/openevolve/algotune/tasks/
-benchmarking/openevolve/algotune/tasks_*/
-benchmarking/openevolve/kernelbench/tasks/
-benchmarking/openevolve/*/openevolve_output/
+benchmarking/agents/openevolve/algotune/tasks/
+benchmarking/agents/openevolve/algotune/tasks_*/
+benchmarking/agents/openevolve/kernelbench/tasks/
+benchmarking/agents/openevolve/*/openevolve_output/
