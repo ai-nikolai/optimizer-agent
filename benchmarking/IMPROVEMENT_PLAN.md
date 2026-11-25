@@ -190,6 +190,24 @@ failure class from string matching. Add to every history entry:
 
 This makes the next analysis a query instead of a script.
 
+## Update: per-failure-class analysis (see `RECURSIVE_ADVANCED_ANALYSIS.md`)
+
+Reading the per-attempt scores (not the merged per-round history) changes the
+priority order:
+
+| Main failure | Debug rescue rate | Tokens per rescue | Verdict |
+|---|---|---|---|
+| compile | 31% (recursive) / 22% (advanced) | 55k / 108k | keep |
+| load | **0%** (0/93 attempts) | ∞ | replace with a mechanical fixer |
+| mismatch | 3.5% / 7% | 483k / 359k | stop debugging it |
+
+Two changes therefore outrank everything in the table below:
+
+1. **Mechanical load-error fixer** — 40/46 and 45/48 load failures are
+   `attribute already exists`; fixing them is worth +12–15 valid tasks per run.
+2. **Route debug by failure class** — compile-only debug cuts KernelBench debug
+   spend by roughly two thirds with ≤3–5 lost conversions.
+
 ## Recommended order of work
 
 | # | Change | Expected effect (estimate) | Evidence strength |
