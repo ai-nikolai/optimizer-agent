@@ -2,9 +2,10 @@
 
 This directory owns the task side only: the 100-problem dataset (`dataset/`),
 the hardened evaluator (`evaluate.py`), the legacy evaluator
-(`evaluate_legacy.py`) and `robust_eval/`, a vendored copy of the
-`robust_kernelbench` evaluator (AGPL-3.0, v0.2.0) so no external checkout is
-needed. Runners live in `../../agents/` — `recursive/` for the
+(`evaluate_legacy.py`). `evaluate.py` calls
+`robust_kernelbench.evaluate_single.eval_kernel_against_ref` directly, so
+`ROBUST_KERNELBENCH_ROOT` must point at that checkout (the launchers export it).
+See `../../ROBUST_KERNELBENCH_FEEDBACK.md` for the issues we reported upstream. Runners live in `../../agents/` — `recursive/` for the
 AKD kernel_eng2 baseline and `optimizer-agent/kernelbench/` for
 optimizer-agent. The sections below describe the evaluator contract and the
 commands each agent uses.
@@ -19,7 +20,7 @@ optimizer-agent:
 | `trial N` repairs `trial N-1` | `--predecessor-selection-method bestN_last` + `num_samples=1` + `num_iterations` |
 | `failure_stage(sample)` | `feedback.classify_result()` (`compile_error`, `runtime_error`, `incorrect`, `improve`, ...) |
 | `select_prompt_spec` / `kb_multi_stage` | `feedback_strategy` + `feedback_hints`; optional `stage_prompts` for whole-prompt switching |
-| `get_prompt_kb_tts_multi_stage` | `prompt_config.json` (KernelBench instructions) |
+| `get_prompt_kb_tts_multi_stage` | `agents/prompts/kernelbench.json` (shared KernelBench instructions) |
 | `evaluate_single` | `evaluate.py` adapter (same `eval_kernel_against_ref`) |
 | `evaluations.csv` | per-problem `summary.json` + driver `results_shardN.csv` |
 | dataset-wide rounds across 100 problems | one sequential repair chain per problem; shard across GPUs for throughput |
@@ -29,7 +30,7 @@ optimizer-agent:
 - `evaluate.py` — task-specific evaluator. Calls
   `robust_kernelbench.evaluate_single.eval_kernel_against_ref` and maps its
   result to the generic evaluator contract.
-- `prompt_config.json` — KernelBench instructions, `ModelNew`/`load_inline`
+- `../../agents/prompts/kernelbench.json` — shared KernelBench instructions, `ModelNew`/`load_inline`
   output format, and the repair-feedback slot.
 - `run_level.py` — loads a KernelBench level, writes each problem to a file, and
   runs one `Agent` per problem with `bestN_last` and `num_samples=1`. With
@@ -177,7 +178,7 @@ python benchmarking/agents/optimizer-agent/kernelbench/run_level.py \
 
 `run_level.py` exposes both axes as flags: `--predecessor-selection-method`,
 `--feedback-strategy`, and `--feedback-profile`. Explicit flags win over the
-task config; otherwise the keys in `prompt_config.json` / the feedback file are
+task config; otherwise the keys in `agents/prompts/kernelbench.json` / the shared feedback file are
 used.
 
 

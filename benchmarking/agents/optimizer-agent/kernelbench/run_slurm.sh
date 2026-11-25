@@ -50,18 +50,17 @@ SELECTION="${SELECTION:-}"
 MAP_ELITES_METHOD="${MAP_ELITES_METHOD:-}"
 NUM_MAP_ELITES="${NUM_MAP_ELITES:-}"
 USE_STRATEGY="${USE_STRATEGY:-0}"
-USE_DEBUG="${USE_DEBUG:-}"
+USE_DEBUG="${USE_DEBUG:-1}"
 DEBUG_ITERATIONS="${DEBUG_ITERATIONS:-1}"
 FEEDBACK_STRATEGY="${FEEDBACK_STRATEGY:-rules_llm}"
 FEEDBACK_PROFILE="${FEEDBACK_PROFILE:-kernel}"
 DIFF_BASED="${DIFF_BASED:-0}"
 DIFF_MODE="${DIFF_MODE:-unified-diff}"
 
-DEFAULT_PROMPT_CONFIG="benchmarking/agents/optimizer-agent/kernelbench/prompt_config.json"
-DEFAULT_FEEDBACK_CONFIG="examples/feedback/kernel_rules_llm.json"
+DEFAULT_PROMPT_CONFIG="benchmarking/agents/prompts/kernelbench.json"
+DEFAULT_FEEDBACK_CONFIG="benchmarking/agents/feedback_config.json"
 DEFAULT_EVALUATE="benchmarking/tasks/kernelbench/evaluate.py"
 EXPERIMENT_DIR="${EXPERIMENT_DIR:-experiments/opt_agent_kb_level${LEVEL}_${JOB_ID}}"
-: "${USE_DEBUG:=0}"
 PROMPT_CONFIG="${PROMPT_CONFIG:-${DEFAULT_PROMPT_CONFIG}}"
 FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${DEFAULT_FEEDBACK_CONFIG}}"
 EVALUATE="${EVALUATE:-${DEFAULT_EVALUATE}}"
@@ -119,7 +118,9 @@ fi
 
 conda deactivate
 conda activate env_kb2
-export PYTHONPATH="${REPO}:${REPO}/benchmarking/tasks/kernelbench"
+ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
+export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
+export PYTHONPATH="${REPO}:${ROBUST_KB}:${PYTHONPATH:-}"
 export CUDA_VISIBLE_DEVICES=1
 export MAX_JOBS="${MAX_JOBS:-4}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"

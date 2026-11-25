@@ -1,30 +1,20 @@
-"""OpenEvolve evaluator template for one KernelBench problem.
-
-The task directory contains ``reference.py`` (the original KernelBench problem)
-and this evaluator. The evolved program must define ``ModelNew``; it is compared
-against the reference ``Model`` with the vendored robust evaluator
-(``benchmarking/tasks/kernelbench/robust_eval``).
-"""
-
+import json
 import os
+import subprocess
 import sys
-import tempfile
-import time
 from pathlib import Path
 
-import torch
-
 HERE = Path(__file__).resolve().parent
-TASKS_DIR = Path(
+# The shared evaluator CLI. Every KernelBench agent (recursive, optimizer-agent,
+# OpenEvolve) evaluates through this file so scores are identical.
+# Generated task dirs live at .../benchmarking/agents/openevolve/kernelbench/
+# tasks/level_<L>/pid_<N>/evaluator.py; five levels up is benchmarking/.
+EVALUATOR = Path(
     os.environ.get(
-        "KERNELBENCH_TASKS_DIR",
-        str(HERE.parents[4] / "tasks" / "kernelbench"),
+        "KERNELBENCH_EVALUATOR",
+        str(HERE.parents[5] / "tasks" / "kernelbench" / "evaluate.py"),
     )
 )
-if str(TASKS_DIR) not in sys.path:
-    sys.path.insert(0, str(TASKS_DIR))
-
-from robust_eval.evaluate_single import eval_kernel_against_ref  # noqa: E402
 
 
 def _env_int(name, default):
@@ -34,65 +24,33 @@ def _env_int(name, default):
         return default
 
 
-def evaluate(program_path, config=None):
-    reference = (HERE / "reference.py").read_text()
-    candidate = Path(program_path).read_text()
-    build_root = Path(os.environ.get("KB_BUILD_ROOT", tempfile.gettempdir()))
-    build_root = build_root / f"oe_kb_{os.getpid()}_{time.time_ns()}"
-    build_root.mkdir(parents=True, exist_ok=True)
-
-    try:
-        result = eval_kernel_against_ref(
-            original_model_src=reference,
-            custom_model_src=candidate,
-            seed_num=42,
-            num_correct_trials=_env_int("KB_NUM_CORRECT_TRIALS", 5),
-            num_perf_trials=_env_int("KB_NUM_PERF_TRIALS", 3),
-            verbose=False,
-            measure_performance=True,
-            build_dir=str(build_root / "kb_build_ref"),
-            build_dir_new=str(build_root / "kb_build_new"),
-            device=torch.device("cuda:0"),
-            atol=None,
-            rtol=None,
-            flush_l2=os.environ.get("KB_FLUSH_L2", "1") not in ("0", "false", "False"),
-        )
-        data = result.model_dump() if hasattr(result, "model_dump") else vars(result)
-        runtime = data.get("runtime")
-        runtime_original = data.get("runtime_original")
-        correctness = bool(data.get("correctness"))
-        timing_success = bool(data.get("timing_success"))
-        speedup = (
-            float(runtime_original) / float(runtime)
-            if correctness
-            and timing_success
-            and runtime
-            and runtime_original
-            and float(runtime) > 0
-            else 0.0
-        )
-        return {
-            "combined_score": speedup,
-            "speedup_score": speedup,
-            "valid": correctness,
-            "compiled": bool(data.get("compiled")),
-            "loading_success": bool(data.get("loading_success")),
-            "correctness": correctness,
-            "timing_success": timing_success,
-            "runtime_custom_ms": runtime,
-            "runtime_original_ms": runtime_original,
-            "error": (data.get("metadata") or {}).get("error", ""),
-        }
-    except Exception as exc:  # noqa: BLE001 - invalid candidates score 0
-        return {
-            "combined_score": 0.0,
-            "speedup_score": 0.0,
-            "valid": False,
-            "compiled": False,
-            "loading_success": False,
-            "correctness": False,
-            "timing_success": False,
-            "runtime_custom_ms": None,
-            "runtime_original_ms": None,
-            "error": f"{type(exc).__name__}: {exc}",
-        }
+def evaluate(program_path: str) -> dict:
+    """Evaluate ``program_path`` with the shared KernelBench evaluator."""
+    reference = HERE / "reference.py"
+    env = os.environ.copy()
+    env.setdefault("PYTHONPATH", os.pathsep.join([str(EVALUATOR.parent), os.environ.get("PYTHONPATH", "")]))
+    proc = subprocess.run(
+        [sys.executable, str(EVALUATOR), "--solution", str(program_path), "--reference", str(reference)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=float(os.environ.get("KERNELBENCH_EVAL_TIMEOUT", 3600)),
+    )
+    marker = "=== Evaluation Result ==="
+    for line in reversed((proc.stdout or "").splitlines()):
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            result = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if "combined_score" in result:
+            return result
+    return {
+        "combined_score": 0.0,
+        "valid": False,
+        "compiled": False,
+        "correctness": False,
+        "error": (proc.stderr or proc.stdout or "evaluator produced no result")[-1000:],
+    }

@@ -52,25 +52,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def patch_evaluator(path, algotune_root):
-    text = path.read_text()
-    block = f'''    possible_algotune_paths = [
-        Path(os.environ.get("ALGOTUNE_PATH", "{algotune_root}")),
-        Path("{algotune_root}"),
-        Path(__file__).parent.parent.parent.parent / "AlgoTune",
-    ]'''
-    new_text, count = re.subn(
-        r"    possible_algotune_paths = \[.*?\]",
-        block,
-        text,
-        count=1,
-        flags=re.DOTALL,
-    )
-    if count == 0:
-        raise SystemExit(f"could not patch AlgoTune path list in {path}")
-    path.write_text(new_text)
-
-
 def patch_config(path, args, n):
     config = yaml.safe_load(path.read_text())
     config["llm"] = {
@@ -121,7 +102,11 @@ def main():
             dst,
             ignore=shutil.ignore_patterns("__pycache__", "openevolve_output"),
         )
-        patch_evaluator(dst / "evaluator.py", args.algotune_root)
+        # Replace OpenEvolve's example evaluator with the shared adapter so the
+        # score, trials and error message match optimizer-agent exactly.
+        (dst / "evaluator.py").write_text(
+            (HERE / "evaluator_template.py").read_text()
+        )
         patch_config(dst / "config.yaml", args, int(row.get("n", 100)))
         override = HERE / "overrides" / f"{name}_initial_program.py"
         if override.exists():

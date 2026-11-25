@@ -115,8 +115,7 @@ export MAX_JOBS="${MAX_JOBS:-4}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
 export OPENAI_API_KEY="${OPENAI_API_KEY:-dummy}"
 export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
-export PYTHONPATH="${REPO}:${OPENEVOLVE_ROOT}:${REPO}/benchmarking/tasks/kernelbench:${PYTHONPATH:-}"
-export KERNELBENCH_TASKS_DIR="${REPO}/benchmarking/tasks/kernelbench"
+export PYTHONPATH="${REPO}:${OPENEVOLVE_ROOT}:${ROBUST_KB}:${PYTHONPATH:-}"
 
 if [ "${PREPARE}" = "1" ]; then
     echo "=== preparing OpenEvolve KernelBench tasks at $(date +%T)"

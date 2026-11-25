@@ -73,8 +73,8 @@ OVERWRITE="${OVERWRITE:-0}"
 EVAL_TIMEOUT="${EVAL_TIMEOUT:-1800}"
 
 DATASET_DIR="${DATASET_DIR:-${REPO}/benchmarking/tasks/kernelbench/dataset}"
-PROMPT_CONFIG="${PROMPT_CONFIG:-${REPO}/benchmarking/agents/recursive/prompt_config.json}"
-FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${REPO}/benchmarking/agents/recursive/feedback_config.json}"
+PROMPT_CONFIG="${PROMPT_CONFIG:-${REPO}/benchmarking/agents/prompts/kernelbench.json}"
+FEEDBACK_CONFIG="${FEEDBACK_CONFIG:-${REPO}/benchmarking/agents/feedback_config.json}"
 EVALUATE="${EVALUATE:-${REPO}/benchmarking/tasks/kernelbench/evaluate.py}"  # robust; legacy: tasks/kernelbench/evaluate_legacy.py
 EXPERIMENT_DIR="${EXPERIMENT_DIR:-${REPO}/experiments/${EXPERIMENT_NAME}}"
 
@@ -131,7 +131,9 @@ fi
 
 conda deactivate
 conda activate env_kb2
-export PYTHONPATH="${REPO}"
+ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
+export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
+export PYTHONPATH="${REPO}:${ROBUST_KB}:${PYTHONPATH:-}"
 export CUDA_VISIBLE_DEVICES=1
 export PATH="/usr/local/cuda/bin:${PATH}"
 export CUDA_HOME="/usr/local/cuda"

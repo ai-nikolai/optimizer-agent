@@ -166,11 +166,11 @@ iteration 0**, so the exploration phase mostly fails to beat the first answer.
 
 Three of these are harness/prompt problems, not model-capability problems.
 
-**1. A real bug in the evaluation path (fixed).** Every output mismatch raised
+**1. A real bug in the evaluation path.** Every output mismatch raised
 this internal error instead of returning a mismatch result:
 
 ```python
-# benchmarking/tasks/kernelbench/robust_eval/evaluate_single.py
+# robust_kernelbench/evaluate_single.py
 exception_str, metadata = register_and_format_exception(...)   # returns (metadata, text)
 metadata["correctness_issue"] = "Output mismatch"              # metadata is now a str → TypeError
 ```
@@ -179,9 +179,9 @@ The unpack order was swapped in the `not matched` branch (the runtime-error
 branch above it is correct). The exception then escapes into the outer handler,
 which reports the formatted `TypeError` as the candidate's error. Consequence:
 125/126 candidates failed with a message that says nothing about *what* was
-wrong, so the debug stage repaired blind. The one-line fix (swap the tuple) is
-in this commit; correctness verdicts are unchanged, only the diagnostic is
-restored.
+wrong, so the debug stage repaired blind. The one-line fix (swap the tuple) is reported in
+`ROBUST_KERNELBENCH_FEEDBACK.md`; correctness verdicts are unaffected, only the
+diagnostic is lost until the maintainer lands it.
 
 **2. `ModelNew was not defined` — 114 times in the advanced profile.**
 The candidates contain a full implementation but name it `Model` (the

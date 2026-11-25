@@ -10,12 +10,11 @@ agents/optimizer-agent/
     run_tasks.py        per-task driver, writes results.csv
     run_slurm.sh        2-GPU launcher (vLLM + agent), curated 8-task set
     run_full_slurm.sh   sharded launcher, full 154-task set
-    prompt_config.json  agent prompts (generic, non-kernel)
-    feedback_config.json
+    (prompts and feedback are shared: ../prompts/algotune.json, ../feedback_config.json)
   kernelbench/
     run_level.py        per-problem driver, KernelBench levels
     run_slurm.sh        2-GPU launcher
-    prompt_config.json  kernel prompts
+    (prompts and feedback are shared: ../prompts/kernelbench.json, ../feedback_config.json)
 ```
 
 ## AlgoTune

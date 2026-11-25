@@ -10,8 +10,11 @@ loop, run from this repository with no dependency on that checkout.
 | File | Purpose |
 |---|---|
 | `run_slurm.sh` | 2-GPU launcher (TP=1 vLLM on GPU 0, agent + evaluator on GPU 1) |
-| `prompt_config.json` | kernel improve/debug/strategy prompts |
-| `feedback_config.json` | runtime-based metric and `rules_llm` feedback |
+| `../prompts/kernelbench.json` | shared kernel improve/debug/strategy prompts |
+| `../feedback_config.json` | shared feedback policy (`rules_llm`, speedup metric) |
+
+Prompts and feedback are shared with the optimizer-agent KernelBench runner so
+both baselines are driven by identical instructions.
 
 Task-side assets live in `../../tasks/kernelbench/`: the 100-problem dataset
 (`dataset/`), the hardened `evaluate.py` and the legacy `evaluate_legacy.py`

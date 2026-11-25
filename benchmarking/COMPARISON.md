@@ -53,6 +53,29 @@ PROBLEM_LIMIT=1 ITERATIONS=1 sbatch benchmarking/agents/openevolve/kernelbench/r
 PROBLEM_LIMIT=10 ITERATIONS=50 sbatch benchmarking/agents/openevolve/kernelbench/run_slurm.sh
 ```
 
+## Evaluation alignment
+
+All agents are scored by the same code per task family, so a score difference
+comes from search and prompts, not from a different grader.
+
+| Task | Shared evaluator | Used by |
+|---|---|---|
+| KernelBench | `tasks/kernelbench/evaluate.py` → `robust_kernelbench.evaluate_single` | recursive, optimizer-agent, OpenEvolve |
+| AlgoTune | `tasks/algotune/evaluate.py` (official `task.is_solution`, manifest seeds) | optimizer-agent, OpenEvolve |
+
+- OpenEvolve's per-task `evaluator.py` is a thin subprocess wrapper around the
+  same CLI; it no longer validates with the evolved program's own
+  `is_solution`, and no longer uses a different trial count or weighting.
+- Feedback is shared: `agents/feedback_config.json` (generic profile,
+  `rules_llm`, speedup metric) and `agents/prompts/{kernelbench,algotune}.json`.
+- Debug is enabled everywhere in the optimizer-agent family
+  (`USE_DEBUG=1`, one debug iteration per round). OpenEvolve has no debug stage;
+  it uses its own mutation loop.
+
+Historical runs (`algotune_full_1655164/1670751`, `openevolve_algotune_*` before
+this change) predate the alignment: their OpenEvolve rows used the upstream
+self-validating evaluator, so treat those rows as historical.
+
 ## Fairness notes
 
 - Same model and vLLM serving settings across methods.

@@ -84,6 +84,16 @@ def _with_timeout(seconds, func, *args, **kwargs):
         signal.signal(signal.SIGALRM, old_handler)
 
 
+class _FunctionSolver:
+    """Adapter for candidates that expose a bare solve()/run_solver() function."""
+
+    def __init__(self, func):
+        self._func = func
+
+    def solve(self, problem, **kwargs):
+        return self._func(problem)
+
+
 def _load_solver(path, timeout):
     spec = importlib.util.spec_from_file_location(
         f"candidate_solver_{uuid.uuid4().hex}", path
@@ -94,8 +104,24 @@ def _load_solver(path, timeout):
         spec.loader.exec_module(module)
         solver_cls = getattr(module, "Solver", None)
         if solver_cls is None:
-            raise AttributeError("candidate does not define class Solver")
-        return solver_cls()
+            # Accept the OpenEvolve task layout: a task-named class with solve().
+            for value in vars(module).values():
+                if (
+                    isinstance(value, type)
+                    and value.__module__ == module.__name__
+                    and callable(getattr(value, "solve", None))
+                ):
+                    solver_cls = value
+                    break
+        if solver_cls is not None:
+            return solver_cls()
+        run_solver = getattr(module, "run_solver", None)
+        if callable(run_solver):
+            return _FunctionSolver(run_solver)
+        solve = getattr(module, "solve", None)
+        if callable(solve):
+            return _FunctionSolver(solve)
+        raise AttributeError("candidate does not define Solver, solve() or run_solver()")
 
     return _with_timeout(timeout, _load)
 
@@ -126,7 +152,7 @@ def main():
     timing_runs = _env_int("ALGOTUNE_TIMING_RUNS", 3)
     warmups = _env_int("ALGOTUNE_WARMUPS", 1)
     solve_timeout = _env_float("ALGOTUNE_SOLVE_TIMEOUT", 120.0)
-    root = os.environ.get("ALGOTUNE_ROOT", "")
+    root = os.environ.get("ALGOTUNE_ROOT") or os.environ.get("ALGOTUNE_PATH", "")
 
     result = {
         "combined_score": float("-inf"),

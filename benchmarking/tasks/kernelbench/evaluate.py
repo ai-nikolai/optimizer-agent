@@ -2,7 +2,7 @@
 """KernelBench evaluator adapter for optimizer-agent.
 
 This is the task-specific evaluator (allowed and expected): it calls
-the vendored ``robust_eval`` evaluator and maps its result to the generic contract
+``robust_kernelbench``'s evaluator and maps its result to the generic contract
 used by optimizer-agent.
 
 It accepts the same ``--solution`` / ``--reference`` interface as every other
@@ -28,11 +28,13 @@ from pathlib import Path
 
 MARKER = "=== Evaluation Result ==="
 
-# The hardened evaluator is vendored in ./robust_eval (a copy of the
-# robust_kernelbench evaluator) so this repository needs no external checkout.
-HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:
-    sys.path.insert(0, str(HERE))
+# The evaluator is robust_kernelbench's own; point ROBUST_KERNELBENCH_ROOT at
+# that checkout (the launchers export it).
+ROBUST_KB_ROOT = Path(
+    os.environ.get("ROBUST_KERNELBENCH_ROOT", "/hx2-weka/home/nr1713/robust_kernelbench")
+)
+if str(ROBUST_KB_ROOT) not in sys.path:
+    sys.path.insert(0, str(ROBUST_KB_ROOT))
 
 
 def _env_int(name, default):
@@ -99,7 +101,7 @@ def main():
 
     try:
         import torch
-        from robust_eval.evaluate_single import eval_kernel_against_ref
+        from robust_kernelbench.evaluate_single import eval_kernel_against_ref
 
         if not torch.cuda.is_available():
             result["error"] = "CUDA is not available in the evaluator environment"
