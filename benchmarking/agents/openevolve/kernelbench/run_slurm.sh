@@ -116,6 +116,9 @@ export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
 export OPENAI_API_KEY="${OPENAI_API_KEY:-dummy}"
 export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
 export PYTHONPATH="${REPO}:${OPENEVOLVE_ROOT}:${ROBUST_KB}:${PYTHONPATH:-}"
+if [ -d "${ROBUST_KB}/.git" ]; then
+    echo "=== robust_kernelbench $(git -C "${ROBUST_KB}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+fi
 
 if [ "${PREPARE}" = "1" ]; then
     echo "=== preparing OpenEvolve KernelBench tasks at $(date +%T)"

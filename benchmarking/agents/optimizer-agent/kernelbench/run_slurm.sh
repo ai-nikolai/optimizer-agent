@@ -121,6 +121,9 @@ conda activate env_kb2
 ROBUST_KB="${ROBUST_KB:-/hx2-weka/home/nr1713/robust_kernelbench}"
 export ROBUST_KERNELBENCH_ROOT="${ROBUST_KB}"
 export PYTHONPATH="${REPO}:${ROBUST_KB}:${PYTHONPATH:-}"
+if [ -d "${ROBUST_KB}/.git" ]; then
+    echo "=== robust_kernelbench $(git -C "${ROBUST_KB}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+fi
 export CUDA_VISIBLE_DEVICES=1
 export MAX_JOBS="${MAX_JOBS:-4}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
