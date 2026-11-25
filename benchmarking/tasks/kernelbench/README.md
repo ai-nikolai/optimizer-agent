@@ -48,9 +48,9 @@ across agents. The repair-chain runner is documented in
 ```bash
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate env_kb2
-cd /hx2-weka/home/nr1713/optimizer-agent-benchmarking
+cd <optimizer-agent checkout>
 export PYTHONPATH=$PWD
-export ROBUST_KERNELBENCH_ROOT=/hx2-weka/home/nr1713/robust_kernelbench
+export ROBUST_KERNELBENCH_ROOT=$ROBUST_KERNELBENCH_ROOT
 export CUDA_VISIBLE_DEVICES=1          # evaluator GPU; server on another GPU
 
 python benchmarking/agents/optimizer-agent/kernelbench/run_level.py \

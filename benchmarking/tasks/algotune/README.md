@@ -81,7 +81,7 @@ builds `tasks_full.json`:
 ```bash
 conda activate env_kb2
 python benchmarking/tasks/algotune/prepare_full_manifest.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+  --algotune-root $ALGOTUNE_ROOT
 ```
 
 Build the local task manifest/dataset:
@@ -89,13 +89,13 @@ Build the local task manifest/dataset:
 ```bash
 # Full 154-task set
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --algotune-root $ALGOTUNE_ROOT \
   --manifest benchmarking/tasks/algotune/tasks_full.json \
   --output benchmarking/tasks/algotune/dataset_full
 
 # Curated 8-task set (default)
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune
+  --algotune-root $ALGOTUNE_ROOT
 ```
 
 `dataset_full/` is only about 5 MB; it contains descriptions, reference source
@@ -105,7 +105,7 @@ Optional upload of the lightweight manifest to your own Hugging Face account:
 
 ```bash
 python benchmarking/tasks/algotune/prepare_dataset.py \
-  --algotune-root /hx2-weka/home/nr1713/AlgoTune \
+  --algotune-root $ALGOTUNE_ROOT \
   --manifest benchmarking/tasks/algotune/tasks_full.json \
   --output benchmarking/tasks/algotune/dataset_full \
   --push-to-hf your-name/AlgoTuneTasks
